@@ -68,5 +68,7 @@ homebrew_casks:
     commit_author:
       name: goreleaser-bot
       email: bot@coreeng.io
-    # Skip pushing the cask for snapshots / prereleases.
-    skip_upload: auto
+    # Skip pushing the cask for snapshots/prereleases, and also until the tap
+    # token is configured — so binary releases still succeed before the tap
+    # repo exists. Publishing turns on automatically once the token is set.
+    skip_upload: '{{ if .Env.HOMEBREW_TAP_GITHUB_TOKEN }}auto{{ else }}true{{ end }}'
