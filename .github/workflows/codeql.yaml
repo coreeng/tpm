@@ -11,11 +11,16 @@ on:
 permissions:
   contents: read
   security-events: write
+  actions: read
 
 jobs:
   analyze:
     name: Analyze Go
     runs-on: ubuntu-latest
+    # Code scanning upload needs the repo to be public (or GitHub Advanced
+    # Security enabled). Skip while private so this isn't a permanently-failing
+    # check; it runs automatically once the repo is open-sourced.
+    if: ${{ github.event.repository.private == false }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
