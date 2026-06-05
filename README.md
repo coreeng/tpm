@@ -63,17 +63,17 @@ schemas, pass `--schema-dir <path>`.
 
 ## Authoring labs with an AI assistant
 
-This repo ships an [`authoring-labs`](.opencode/skills/authoring-labs/SKILL.md) skill that
-guides an LLM-based assistant from teaching intent through to a scaffolded lab, reviewed
-solution, and starter content — driving the `tpm` CLI along the way.
+The preferred way to author labs with an AI assistant is to install the
+[`authoring-labs`](https://github.com/coreeng/tpm-authoring-labs-skill) skill. It guides an
+LLM-based assistant from teaching intent through to a scaffolded lab, reviewed solution,
+and starter content — driving the `tpm` CLI along the way.
 
-The skill is provided for three agent runtimes via the standard skill directories:
+Clone the skill repository into your skills directory so `SKILL.md` is at the root of the
+installed skill:
 
-- `.claude/skills/authoring-labs` (Claude Code)
-- `.agents/skills/authoring-labs`
-- `.opencode/skills/authoring-labs` (canonical source; the other two are symlinks)
-
-The bundled skill is **self-contained** and needs no additional plugins.
+```bash
+git clone git@github.com:coreeng/tpm-authoring-labs-skill.git ~/.config/opencode/skills/authoring-labs
+```
 
 ### Optional: richer flows with `superpowers`
 
