@@ -1,0 +1,5 @@
+code: 66666666-6666-6666-6666-666666666666
+title: Assessment One
+validatorImageUri: oci://registry/validator:1.0.0
+starterImageUri: oci://registry/starter:1.0.0
+imageVersion: 1.0.0

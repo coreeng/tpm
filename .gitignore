@@ -1,0 +1,10 @@
+# Compiled binary
+/tpm
+tpm.exe
+
+# GoReleaser output
+/dist/
+
+# Build artifacts / test output
+*.out
+coverage.txt

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/goal.schema.json",
+  "title": "Goal",
+  "description": "A validation checkpoint within a challenge. Goals are defined inline in challenge.yaml files as array items.",
+  "type": "object",
+  "required": [
+    "code",
+    "title",
+    "description"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Semantic identifier for this goal (e.g., 'PodRunning', 'DeploymentScaled'). Must start and end with alphanumeric, can contain hyphens. This code is referenced by validator services to track goal completion."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short, user-facing name for the goal displayed in the UI."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Detailed explanation of what the learner needs to accomplish for this goal."
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+code: 22222222-2222-2222-2222-222222222222
+title: Chapter One
+isDraft: false
+multipleChoiceAssessments:
+    - index: 0
+      code: 33333333-3333-3333-3333-333333333333
+      title: Test Quiz
+      description: A test quiz
+      passingScore: 70
+      questions:
+        - index: 0
+          code: 44444444-4444-4444-4444-444444444444
+          question: What is a valid UUID?
+          type: SINGLE
+          options:
+            - index: 0
+              text: A semantic code
+              correct: false
+            - index: 1
+              text: A unique identifier
+              correct: true

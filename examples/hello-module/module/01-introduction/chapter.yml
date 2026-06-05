@@ -1,0 +1,21 @@
+code: aaaaaaaa-0002-4002-8002-aaaaaaaa0002
+title: Introduction
+isDraft: false
+multipleChoiceAssessments:
+    - index: 0
+      code: aaaaaaaa-0004-4004-8004-aaaaaaaa0004
+      title: Quick Check
+      description: A short quiz to confirm the basics.
+      passingScore: 70
+      questions:
+        - index: 0
+          code: aaaaaaaa-0005-4005-8005-aaaaaaaa0005
+          question: What does the tpm CLI manage?
+          type: SINGLE
+          options:
+            - index: 0
+              text: Training Platform modules and labs
+              correct: true
+            - index: 1
+              text: Container images only
+              correct: false

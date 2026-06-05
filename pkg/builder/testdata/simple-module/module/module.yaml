@@ -1,0 +1,8 @@
+code: test-module-123
+title: Test Module
+shortDescription: Test
+bannerImage: https://example.com/banner.png
+bannerVideo: https://example.com/video.mp4
+level: BEGINNER
+tags:
+  - test

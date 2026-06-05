@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/section.schema.json",
+  "title": "Section",
+  "description": "A learning unit within a chapter, typically containing educational content, instructions, and examples. Sections are stored in numbered directories within chapters (e.g., 01-chapter/01-section-name/). Each section directory must contain section.yaml and description.md.",
+  "type": "object",
+  "required": [
+    "code",
+    "title"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Unique identifier for this section. Must start and end with alphanumeric, can contain hyphens."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the section shown in the UI."
+    },
+    "shortDescription": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional brief summary of the section content."
+    },
+    "estimatedDuration": {
+      "type": "string",
+      "pattern": "^[0-9]+(m|h)$",
+      "description": "Optional estimated time to complete this section (e.g., '15m', '1h').",
+      "examples": ["15m", "30m", "1h"]
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL to a video resource for this section."
+    },
+    "thumbnail": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional image URL for section card thumbnail. NOTE: Currently unused by the training platform."
+    },
+    "thumbnailDescription": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional description or alt text for the thumbnail image. NOTE: Currently unused by the training platform."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "84a00c05-b271-42ff-8516-15231bb1761b",
+      "title": "Introduction",
+      "shortDescription": "What is a Delivery Unit?",
+      "video": "https://www.youtube.com/watch?v=example",
+      "estimatedDuration": "15m"
+    }
+  ]
+}

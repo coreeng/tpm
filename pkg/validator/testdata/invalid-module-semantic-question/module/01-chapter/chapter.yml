@@ -1,0 +1,21 @@
+code: 88888888-8888-8888-8888-888888888888
+title: Chapter with Invalid Question Code
+isDraft: false
+multipleChoiceAssessments:
+  - index: 0
+    code: 77777777-7777-7777-7777-777777777777
+    title: Quiz with Semantic Question
+    description: Test quiz
+    passingScore: 70
+    questions:
+      - index: 0
+        code: q1-semantic-question-code
+        question: This question has semantic code
+        type: SINGLE
+        options:
+          - index: 0
+            text: Option A
+            correct: true
+          - index: 1
+            text: Option B
+            correct: false

@@ -1,0 +1,31 @@
+code: test-module-123
+title: Test Module
+description: |
+    A simple test module for testing purposes
+shortDescription: Test
+bannerImage: https://example.com/banner.png
+bannerVideo: https://example.com/video.mp4
+tags:
+    - test
+level: BEGINNER
+chapters:
+    - code: test-chapter-456
+      index: 1
+      title: Test Chapter
+      description: |
+        A test chapter
+      shortDescription: Test chapter
+      bannerImage: ""
+      bannerVideo: ""
+      isDraft: true
+      sections:
+        - code: test-section-789
+          index: 1
+          title: Test Section
+          description: |
+            A test section
+          shortDescription: A brief test section
+          video: https://example.com/video.mp4
+          estimatedDuration: 30m
+      assessments: []
+      multipleChoiceAssessments: []

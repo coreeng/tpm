@@ -1,0 +1,6 @@
+# Trivy ignore rules for tpm.
+# Add documented suppressions here as needed, e.g.:
+# vulnerabilities:
+#   - id: CVE-XXXX-YYYY
+#     statement: why this is not exploitable in tpm
+misconfigurations: []

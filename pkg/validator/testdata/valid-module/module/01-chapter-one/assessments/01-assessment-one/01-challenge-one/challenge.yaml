@@ -1,0 +1,7 @@
+code: FirstChallenge
+title: Challenge One
+estimatedDuration: 10m
+goals:
+    - code: FirstGoal
+      title: Goal One
+      description: Complete the first goal

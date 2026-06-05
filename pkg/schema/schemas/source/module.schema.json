@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/module.schema.json",
+  "title": "Module (Source)",
+  "description": "Root configuration for a training module as it exists on disk (module/module.yaml). This schema validates the source file only - it does not include the full nested hierarchy of chapters, sections, and assessments. The module directory must contain module.yaml and description.md.",
+  "type": "object",
+  "required": [
+    "code",
+    "title",
+    "shortDescription",
+    "level",
+    "bannerImage",
+    "tags"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Unique identifier for this module. Must start and end with alphanumeric, can contain hyphens."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the module shown in the UI and module catalog."
+    },
+    "shortDescription": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Brief summary displayed on module cards in the catalog."
+    },
+    "level": {
+      "type": "string",
+      "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
+      "description": "Difficulty level of the module."
+    },
+    "bannerImage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Header image URL displayed on the module landing page.",
+      "examples": ["https://storage.googleapis.com/cdn-training-platform/p2p-banner.png"]
+    },
+    "bannerVideo": {
+      "type": "string",
+      "description": "Introductory video URL displayed on the module landing page. Optional - omit or leave empty if the module has no video.",
+      "examples": ["https://www.youtube.com/watch?v=example"]
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Array of categorization tags for the module. At least one tag is required.",
+      "examples": [["devops", "cicd", "production"]]
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL to a module overview or introduction video."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "05A1E379-D1C6-4782-9003-7609B93D1E38",
+      "title": "Path to Production",
+      "shortDescription": "Master the practices and tools for reliably delivering software to production.",
+      "bannerImage": "https://storage.googleapis.com/cdn-training-platform/kubernetes.png",
+      "bannerVideo": "https://www.youtube.com/watch?v=example",
+      "tags": ["Continuous Delivery"],
+      "level": "INTERMEDIATE"
+    }
+  ]
+}

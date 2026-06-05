@@ -1,0 +1,306 @@
+package schema
+
+import (
+	"bytes"
+	"embed"
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/santhosh-tekuri/jsonschema/v5"
+	_ "github.com/santhosh-tekuri/jsonschema/v5/httploader"
+	"gopkg.in/yaml.v3"
+)
+
+// embeddedSchemas holds the canonical source schemas baked into the tpm binary
+// so the CLI is self-contained and works without the schemas living alongside
+// it on disk (e.g. when installed via Homebrew). Callers can still override
+// them by passing an explicit schema directory.
+//
+//go:embed schemas/source/*.json
+var embeddedSchemas embed.FS
+
+var (
+	embeddedDirOnce sync.Once
+	embeddedDirPath string
+	embeddedDirErr  error
+)
+
+// EmbeddedSchemaDir materializes the embedded source schemas into a temporary
+// directory (once per process) and returns its path. This lets the rest of the
+// validator reuse its on-disk loading logic unchanged.
+func EmbeddedSchemaDir() (string, error) {
+	embeddedDirOnce.Do(func() {
+		dir, err := os.MkdirTemp("", "tpm-schemas-")
+		if err != nil {
+			embeddedDirErr = fmt.Errorf("failed to create temp schema dir: %w", err)
+			return
+		}
+		entries, err := fs.ReadDir(embeddedSchemas, "schemas/source")
+		if err != nil {
+			embeddedDirErr = fmt.Errorf("failed to read embedded schemas: %w", err)
+			return
+		}
+		for _, entry := range entries {
+			data, err := embeddedSchemas.ReadFile("schemas/source/" + entry.Name())
+			if err != nil {
+				embeddedDirErr = fmt.Errorf("failed to read embedded schema %s: %w", entry.Name(), err)
+				return
+			}
+			if err := os.WriteFile(filepath.Join(dir, entry.Name()), data, 0o644); err != nil {
+				embeddedDirErr = fmt.Errorf("failed to write embedded schema %s: %w", entry.Name(), err)
+				return
+			}
+		}
+		embeddedDirPath = dir
+	})
+	return embeddedDirPath, embeddedDirErr
+}
+
+// Validator handles JSON schema validation for module files
+type Validator struct {
+	schemaDir string
+	compiler  *jsonschema.Compiler
+	schemas   map[string]*jsonschema.Schema
+}
+
+// ValidationError represents a schema validation error
+type ValidationError struct {
+	Path    string // JSONPath to the error location
+	Field   string // Field name
+	Message string // Error message
+}
+
+// NewValidator creates a new schema validator. When schemaDir is empty the
+// schemas embedded in the tpm binary are used, so the CLI works standalone.
+func NewValidator(schemaDir string) (*Validator, error) {
+	if schemaDir == "" {
+		dir, err := EmbeddedSchemaDir()
+		if err != nil {
+			return nil, err
+		}
+		schemaDir = dir
+	}
+
+	absPath, err := filepath.Abs(schemaDir)
+	if err != nil {
+		return nil, fmt.Errorf("invalid schema directory: %w", err)
+	}
+
+	// Check if schema directory exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("schema directory does not exist: %s", absPath)
+	}
+
+	compiler := jsonschema.NewCompiler()
+	compiler.Draft = jsonschema.Draft2020
+
+	// Pre-register all local schema files with their GitHub URLs
+	// This prevents 404 errors when schemas reference each other via GitHub URLs
+	schemaFiles := []string{
+		"module.schema.json",
+		"chapter.schema.json",
+		"section.schema.json",
+		"assessment.schema.json",
+		"challenge.schema.json",
+		"goal.schema.json",
+		"multiple-choice-assessment.schema.json",
+		"question.schema.json",
+		"option.schema.json",
+	}
+
+	const githubPrefix = "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/"
+
+	for _, filename := range schemaFiles {
+		localPath := filepath.Join(absPath, filename)
+		data, err := os.ReadFile(localPath)
+		if err != nil {
+			// Skip missing files
+			continue
+		}
+
+		// Create a ReadCloser from the bytes
+		reader := io.NopCloser(bytes.NewReader(data))
+		githubURL := githubPrefix + filename
+
+		if err := compiler.AddResource(githubURL, reader); err != nil {
+			return nil, fmt.Errorf("failed to register schema %s: %w", filename, err)
+		}
+	}
+
+	return &Validator{
+		schemaDir: absPath,
+		compiler:  compiler,
+		schemas:   make(map[string]*jsonschema.Schema),
+	}, nil
+}
+
+// LoadSchema loads a JSON schema from the schema directory
+func (v *Validator) LoadSchema(schemaName string) (*jsonschema.Schema, error) {
+	// Check cache first
+	if schema, ok := v.schemas[schemaName]; ok {
+		return schema, nil
+	}
+
+	schemaPath := filepath.Join(v.schemaDir, schemaName)
+
+	// Check if file exists
+	if _, err := os.Stat(schemaPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("schema file not found: %s", schemaPath)
+	}
+
+	// Load schema using file:// URL
+	schemaURL := "file://" + schemaPath
+	schema, err := v.compiler.Compile(schemaURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compile schema %s: %w", schemaName, err)
+	}
+
+	// Cache the schema
+	v.schemas[schemaName] = schema
+	return schema, nil
+}
+
+// ValidateYAMLFile validates a YAML file against a JSON schema
+func (v *Validator) ValidateYAMLFile(filePath, schemaName string) ([]ValidationError, error) {
+	// Load the schema
+	schema, err := v.LoadSchema(schemaName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read YAML file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	// Parse YAML to interface{}
+	var yamlData interface{}
+	if err := yaml.Unmarshal(data, &yamlData); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML file %s: %w", filePath, err)
+	}
+
+	// Validate
+	if err := schema.Validate(yamlData); err != nil {
+		return convertSchemaErrors(err), nil
+	}
+
+	return nil, nil
+}
+
+// ValidateData validates arbitrary data against a schema
+func (v *Validator) ValidateData(data interface{}, schemaName string) ([]ValidationError, error) {
+	schema, err := v.LoadSchema(schemaName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := schema.Validate(data); err != nil {
+		return convertSchemaErrors(err), nil
+	}
+
+	return nil, nil
+}
+
+// ValidateStruct validates a Go struct by converting it to JSON first
+func (v *Validator) ValidateStruct(data interface{}, schemaName string) ([]ValidationError, error) {
+	// Convert struct to JSON
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal data to JSON: %w", err)
+	}
+
+	// Parse JSON back to interface{}
+	var jsonData interface{}
+	if err := json.Unmarshal(jsonBytes, &jsonData); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON data: %w", err)
+	}
+
+	// Validate
+	return v.ValidateData(jsonData, schemaName)
+}
+
+// convertSchemaErrors converts jsonschema validation errors to our ValidationError format
+func convertSchemaErrors(err error) []ValidationError {
+	var errors []ValidationError
+
+	if validationErr, ok := err.(*jsonschema.ValidationError); ok {
+		errors = append(errors, extractErrors(validationErr)...)
+	} else {
+		// If it's not a validation error, treat as a generic error
+		errors = append(errors, ValidationError{
+			Path:    "",
+			Field:   "",
+			Message: err.Error(),
+		})
+	}
+
+	return errors
+}
+
+// extractErrors recursively extracts all validation errors
+func extractErrors(err *jsonschema.ValidationError) []ValidationError {
+	var errors []ValidationError
+
+	// Add the current error
+	errors = append(errors, ValidationError{
+		Path:    err.InstanceLocation,
+		Field:   getFieldName(err.InstanceLocation),
+		Message: err.Message,
+	})
+
+	// Recursively add causes
+	for _, cause := range err.Causes {
+		errors = append(errors, extractErrors(cause)...)
+	}
+
+	return errors
+}
+
+// getFieldName extracts the field name from a JSON path
+func getFieldName(path string) string {
+	if path == "" {
+		return ""
+	}
+
+	// Remove leading slash
+	if len(path) > 0 && path[0] == '/' {
+		path = path[1:]
+	}
+
+	// Get the last segment (field name)
+	parts := splitPath(path)
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+
+	return path
+}
+
+// splitPath splits a JSON path into segments
+func splitPath(path string) []string {
+	var parts []string
+	current := ""
+
+	for _, ch := range path {
+		if ch == '/' {
+			if current != "" {
+				parts = append(parts, current)
+				current = ""
+			}
+		} else {
+			current += string(ch)
+		}
+	}
+
+	if current != "" {
+		parts = append(parts, current)
+	}
+
+	return parts
+}

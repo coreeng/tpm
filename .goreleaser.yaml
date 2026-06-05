@@ -1,0 +1,72 @@
+# GoReleaser configuration for tpm.
+# Docs: https://goreleaser.com
+version: 2
+
+project_name: tpm
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: tpm
+    main: .
+    binary: tpm
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/coreeng/tpm/cmd.version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: tpm
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: coreeng
+    name: tpm
+  draft: false
+  prerelease: auto
+
+# Homebrew cask for macOS (and Linux) users.
+# Requires a tap repository (coreeng/homebrew-tap) and a HOMEBREW_TAP_GITHUB_TOKEN
+# secret with write access to it. See README "Installation".
+homebrew_casks:
+  - name: tpm
+    repository:
+      owner: coreeng
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/coreeng/tpm"
+    description: "Training Platform Module (tpm) CLI — author and manage training modules and labs"
+    commit_author:
+      name: goreleaser-bot
+      email: bot@coreeng.io
+    # Skip pushing the cask for snapshots / prereleases.
+    skip_upload: auto

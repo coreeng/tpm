@@ -1,0 +1,1 @@
+A valid module for testing

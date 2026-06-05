@@ -1,0 +1,10 @@
+code: TestChallenge
+title: Test Challenge
+estimatedDuration: 15m
+goals:
+  - code: FirstTestGoal
+    title: First Goal
+    description: Complete the first goal
+  - code: SecondTestGoal
+    title: Second Goal
+    description: Complete the second goal

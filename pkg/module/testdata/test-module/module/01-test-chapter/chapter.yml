@@ -1,0 +1,34 @@
+code: bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
+title: Test Chapter
+multipleChoiceAssessments:
+  - index: 0
+    code: cccccccc-cccc-cccc-cccc-cccccccccccc
+    title: Chapter Quiz
+    description: Test your knowledge
+    passingScore: 75
+    questions:
+      - index: 0
+        code: dddddddd-dddd-dddd-dddd-dddddddddddd
+        question: What is the purpose of this test?
+        type: SINGLE
+        options:
+          - index: 0
+            text: To test the loader
+            correct: true
+          - index: 1
+            text: To test the validator
+            correct: false
+      - index: 1
+        code: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+        question: Which components can have multiple correct answers?
+        type: MULTIPLE
+        options:
+          - index: 0
+            text: MULTIPLE type questions
+            correct: true
+          - index: 1
+            text: SINGLE type questions
+            correct: false
+          - index: 2
+            text: Quiz assessments
+            correct: true

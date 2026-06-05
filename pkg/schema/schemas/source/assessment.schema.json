@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/assessment.schema.json",
+  "title": "Interactive Assessment",
+  "description": "An interactive, hands-on assessment with multiple challenges. Assessments are stored in numbered directories within chapter assessments/ folders (e.g., 01-chapter/assessments/01-assessment-name/). The assessment directory must contain assessment.yaml, description.md, and subdirectories for each challenge. The assessment metadata references OCI artifacts (starter tarball and validator image) that implement the runtime behavior.",
+  "type": "object",
+  "required": [
+    "code",
+    "title",
+    "starterImageUri",
+    "validatorImageUri",
+    "imageVersion"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Unique identifier for this assessment. Must start and end with alphanumeric, can contain hyphens."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the assessment shown in the UI."
+    },
+    "starterImageUri": {
+      "type": "string",
+      "format": "uri",
+      "description": "OCI artifact URI for the starter content tarball. This tarball contains files to seed the learner's Git repository (e.g., 'oci://registry/tpa-p2p-starter').",
+      "examples": ["oci://europe-west2-docker.pkg.dev/.../tpa-p2p-bd-adp-starter"]
+    },
+    "validatorImageUri": {
+      "type": "string",
+      "format": "uri",
+      "description": "OCI image URI for the validator service. This long-running container validates learner progress against challenge goals (e.g., 'oci://registry/tpa-p2p-validator').",
+      "examples": ["oci://europe-west2-docker.pkg.dev/.../tpa-p2p-bd-adp-validator"]
+    },
+    "imageVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
+      "description": "Semantic version tag shared by both starterImageUri and validatorImageUri. Supports full semver 2.0.0 format including pre-release and build metadata (e.g., '0.0.4', '1.0.0-alpha', '1.0.0+build.123').",
+      "examples": ["0.0.1", "1.2.3", "1.0.0-alpha", "1.0.0-beta.1", "1.0.0+20130313144700", "1.0.0-rc.1+build.123"]
+    },
+    "timeLimit": {
+      "type": "string",
+      "pattern": "^[0-9]+(m|h)$",
+      "description": "Optional time limit for completing the entire assessment (e.g., '30m', '1h').",
+      "examples": ["30m", "1h", "2h"]
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL to a video resource providing assessment walkthrough or introduction."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "89856668-E592-4E11-A0F6-042ED4BC107C",
+      "title": "Automated DIVA Production",
+      "timeLimit": "1h",
+      "starterImageUri": "oci://europe-west2-docker.pkg.dev/registry/tpa-p2p-bd-adp-starter",
+      "validatorImageUri": "oci://europe-west2-docker.pkg.dev/registry/tpa-p2p-bd-adp-validator",
+      "imageVersion": "0.0.3"
+    }
+  ]
+}

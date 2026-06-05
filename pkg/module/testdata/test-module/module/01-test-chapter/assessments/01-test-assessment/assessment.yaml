@@ -1,0 +1,6 @@
+code: 10101010-1010-1010-1010-101010101010
+title: Test Assessment
+validatorImageUri: oci://registry/test-validator:1.0.0
+starterImageUri: oci://registry/test-starter:1.0.0
+imageVersion: 1.0.0
+helmChartImageUri: oci://registry/test-chart:1.0.0

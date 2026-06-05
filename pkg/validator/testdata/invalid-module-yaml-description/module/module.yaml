@@ -1,0 +1,9 @@
+code: 12341234-1234-1234-1234-123412341234
+title: Module with YAML Description
+description: This description should be in description.md not in YAML
+shortDescription: Test module
+bannerImage: https://example.com/banner.png
+bannerVideo: https://example.com/video.mp4
+level: BEGINNER
+tags:
+  - test

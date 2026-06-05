@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/challenge.schema.json",
+  "title": "Challenge",
+  "description": "A specific task within an interactive assessment with discrete validation goals. Challenges are stored in numbered directories within assessments (e.g., assessments/01-assessment-name/01-challenge-name/). Each challenge directory must contain: challenge.yaml, description.md, and successMessage.md.",
+  "type": "object",
+  "required": [
+    "code",
+    "title",
+    "goals"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Semantic identifier for this challenge (e.g., 'DeployToStaging', 'TestChallenge'). Must start and end with alphanumeric, can contain hyphens. This code is referenced by validator services to track challenge completion."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the challenge shown in the UI."
+    },
+    "goals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "goal.schema.json"
+      },
+      "description": "Array of validation goals that must be completed for this challenge. Each goal represents a discrete validation checkpoint."
+    },
+    "estimatedDuration": {
+      "type": "string",
+      "pattern": "^[0-9]+(m|h)$",
+      "description": "Optional estimated time to complete this challenge (e.g., '15m', '1h').",
+      "examples": ["15m", "30m", "1h", "2h"]
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL to a video resource providing challenge-specific guidance."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "DeployToStaging",
+      "title": "Deploy Application to Staging Environment",
+      "estimatedDuration": "20m",
+      "goals": [
+        {
+          "code": "WorkflowFileExists",
+          "title": "Create workflow file",
+          "description": "Add a GitHub Actions workflow file"
+        },
+        {
+          "code": "AppRunningInStaging",
+          "title": "Application deployed",
+          "description": "Verify the app is accessible in staging"
+        }
+      ]
+    }
+  ]
+}
