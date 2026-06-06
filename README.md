@@ -75,21 +75,6 @@ installed skill:
 git clone git@github.com:coreeng/tpm-authoring-labs-skill.git ~/.config/opencode/skills/authoring-labs
 ```
 
-### Optional: richer flows with `superpowers`
-
-The skill's discovery, planning, and execution phases are inspired by the
-[`superpowers`](https://github.com/obra/superpowers) plugin (MIT, by Jesse Vincent). If you
-install `superpowers`, you can use its `brainstorming`, `writing-plans`, and
-`executing-plans` skills in place of the inlined guidance for a more structured experience:
-
-```bash
-# In Claude Code:
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
-
-`superpowers` is **not** required and is **not** bundled with `tpm`.
-
 ## Example module
 
 A minimal, fully-working example module lives in [`examples/`](examples/). From the repo
