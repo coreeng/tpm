@@ -249,7 +249,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /podinfo ./main.go
 
 FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /podinfo /podinfo
-USER nonroot:nonroot
+USER 65532:65532
 EXPOSE 8080
 ENTRYPOINT ["/podinfo"]
 `
@@ -339,7 +339,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /validator ./main.go
 
 FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /validator /validator
-USER nonroot:nonroot
+USER 65532:65532
 ENTRYPOINT ["/validator"]
 `
 

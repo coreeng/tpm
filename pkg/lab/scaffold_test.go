@@ -150,6 +150,15 @@ func TestScaffoldStandaloneLab(t *testing.T) {
 			t.Fatalf("starter-content/main.go does not contain %q", want)
 		}
 	}
+	for _, name := range []string{"starter-content/Dockerfile", "solution/Dockerfile"} {
+		dockerfile := readFile(t, filepath.Join(dir, name))
+		if !strings.Contains(dockerfile, "USER 65532:65532") {
+			t.Fatalf("%s does not use a numeric non-root user", name)
+		}
+		if strings.Contains(dockerfile, "USER nonroot:nonroot") {
+			t.Fatalf("%s uses a non-numeric user that kubelet cannot verify with runAsNonRoot", name)
+		}
+	}
 	agents := readFile(t, filepath.Join(dir, "validator/AGENTS.md"))
 	for _, want := range []string{"Challenge and goal codes", "patch Pod conditions", "validator Pod", "sandboxed namespaces", "LoadBalancer and NodePort Services are blocked", "restricted Pod Security", "Workspace egress is restricted", "IA_Completed", "IAC_<ChallengeCode>", "IAG_<ChallengeCode>_<GoalCode>", "False", "Unknown", "True"} {
 		if !strings.Contains(agents, want) {
