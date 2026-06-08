@@ -54,21 +54,27 @@ release:
   draft: false
   prerelease: auto
 
-# Homebrew cask for macOS (and Linux) users.
-# Requires a tap repository (coreeng/homebrew-tap) and a HOMEBREW_TAP_GITHUB_TOKEN
-# secret with write access to it. See README "Installation".
-homebrew_casks:
+# Homebrew formula for macOS and Linux users, published into CECG's existing
+# public tap (coreeng/homebrew-public, tapped as `coreeng/public`). Matches the
+# layout of the tap's other tools (e.g. semver-utils): a GoReleaser-generated
+# formula at the repo root, covering darwin/linux × amd64/arm64.
+#
+# Requires a HOMEBREW_TAP_GITHUB_TOKEN secret with Contents:write on
+# coreeng/homebrew-public. See README "Installation".
+brews:
   - name: tpm
     repository:
       owner: coreeng
-      name: homebrew-tap
+      name: homebrew-public
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    # Formulae live at the repo root in this tap, not under Formula/.
+    directory: .
     homepage: "https://github.com/coreeng/tpm"
     description: "Training Platform Module (tpm) CLI — author and manage training modules and labs"
     commit_author:
       name: goreleaser-bot
       email: bot@coreeng.io
-    # Skip pushing the cask for snapshots/prereleases, and also until the tap
-    # token is configured — so binary releases still succeed before the tap
-    # repo exists. Publishing turns on automatically once the token is set.
+    # Skip pushing the formula for snapshots/prereleases, and also until the tap
+    # token is configured — so binary releases still succeed before the token
+    # exists. Publishing turns on automatically once the token is set.
     skip_upload: '{{ if .Env.HOMEBREW_TAP_GITHUB_TOKEN }}auto{{ else }}true{{ end }}'
