@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-app
+  labels:
+    app: health-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-app
+  template:
+    metadata:
+      labels:
+        app: health-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        # Spring Boot's embedded Tomcat needs a writable temp dir; a read-only
+        # root filesystem forces us to provide one explicitly.
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: app
+          image: health-app:local
+          ports:
+            - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          # TODO: add a readinessProbe so Kubernetes only sends traffic once the
+          # app reports ready. HTTP GET /actuator/health/readiness on port 8080.
+          #
+          # TODO: add a livenessProbe so Kubernetes restarts the container if the
+          # app becomes unhealthy. HTTP GET /actuator/health/liveness on port 8080.

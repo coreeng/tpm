@@ -1,0 +1,13 @@
+title: Spring Boot Health Checks
+code: spring-boot-health-checks
+timeLimit: 30m
+challenges:
+  - code: HealthChecksAdded
+    title: Add health checks to the Spring Boot app
+    goals:
+      - code: AppDeployedAndReady
+        title: Deploy the app and reach Ready
+      - code: ReadinessProbeWired
+        title: Wire up the readiness probe
+      - code: LivenessProbeWired
+        title: Wire up the liveness probe

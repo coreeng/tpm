@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: health-app
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose only the health endpoint group over HTTP.
+        include: health
+  endpoint:
+    health:
+      # Enable the Kubernetes liveness/readiness probe groups, which serve
+      # /actuator/health/liveness and /actuator/health/readiness.
+      probes:
+        enabled: true
+      show-details: always

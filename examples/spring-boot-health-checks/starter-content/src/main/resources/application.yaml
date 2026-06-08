@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: health-app
+
+# TODO: once the Actuator dependency is added, enable the Kubernetes health
+# probe groups so the app serves /actuator/health/liveness and
+# /actuator/health/readiness. For example:
+#
+# management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: health
+#   endpoint:
+#     health:
+#       probes:
+#         enabled: true
+#       show-details: always

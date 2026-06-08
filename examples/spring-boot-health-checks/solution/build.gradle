@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1'
+
+java {
+    // Pin the build to Java 21 so it is reproducible regardless of the host JDK.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // Actuator provides the /actuator/health/liveness and /actuator/health/readiness
+    // endpoints that the Kubernetes probes call.
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+}
