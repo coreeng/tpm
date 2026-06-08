@@ -1,0 +1,150 @@
+name: Lab E2E
+
+# Exercises the spring-boot-health-checks example lab end-to-end against a kind
+# cluster using the published OCI lab-runtime chart:
+#   tpm lab run -> assert goals RED -> negative control (starter stays RED)
+#   -> deploy solution -> poll until GREEN -> cleanup.
+# This gives the lab teeth: a rubber-stamping validator, a broken probe path, or a
+# non-bootable image all fail the job.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'examples/spring-boot-health-checks/**'
+      - '.github/workflows/lab-e2e.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'examples/spring-boot-health-checks/**'
+      - '.github/workflows/lab-e2e.yaml'
+  workflow_dispatch:
+    inputs:
+      chart_version:
+        description: 'training-platform-assessment chart version'
+        default: '0.0.249'
+
+permissions:
+  contents: read          # OCI chart pulls anonymously; no packages: read needed
+
+concurrency:
+  group: lab-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Lab E2E (kind)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      LAB_PATH: examples/spring-boot-health-checks
+      CHART_URI: oci://ghcr.io/coreeng/charts/training-platform-assessment
+      CHART_VERSION: ${{ github.event.inputs.chart_version || '0.0.249' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Build tpm
+        run: |
+          go build -o tpm .
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      # cluster_name: kind => context kind-kind => tpm derives kind cluster "kind"
+      # (pkg/lab/run.go strips the kind- prefix) and the lab Makefiles' KIND_CLUSTER
+      # default ("kind") matches, so no overrides are needed anywhere.
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
+
+      - name: Sanity check
+        run: |
+          kubectl cluster-info
+          tpm --version
+
+      - name: Start lab (tpm lab run)
+        run: |
+          set -euo pipefail
+          tpm lab run "$LAB_PATH" \
+            --chart-uri "$CHART_URI" \
+            --chart-version "$CHART_VERSION" | tee run.out
+
+          RUN_ID="$(grep -oE 'run id [0-9a-fA-F-]+' run.out | awk '{print $3}')"
+          SYSTEM_NS="$(grep -oE '^System namespace: .+' run.out | awk '{print $3}')"
+          WORKSPACE_NS="$(grep -oE '^Workspace namespace: .+' run.out | awk '{print $3}')"
+          # Fall back to the documented naming if parsing ever changes.
+          : "${SYSTEM_NS:=lab-${RUN_ID}-system}"
+          : "${WORKSPACE_NS:=lab-${RUN_ID}-workspace}"
+          test -n "$RUN_ID"
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          echo "SYSTEM_NS=$SYSTEM_NS" >> "$GITHUB_ENV"
+          echo "WORKSPACE_NS=$WORKSPACE_NS" >> "$GITHUB_ENV"
+          echo "Lab run $RUN_ID (system=$SYSTEM_NS workspace=$WORKSPACE_NS)"
+
+      - name: Assert goals start RED
+        run: |
+          set -euo pipefail
+          source "$GITHUB_WORKSPACE/.github/scripts/lab-e2e-assert.sh"
+          # Give the validator one eval cycle, then confirm nothing is prematurely complete.
+          sleep 8
+          dump_conditions
+          assert_eq IA_Completed False
+
+      - name: Negative control - starter stays RED
+        run: |
+          set -euo pipefail
+          source "$GITHUB_WORKSPACE/.github/scripts/lab-e2e-assert.sh"
+          ( cd "$LAB_PATH/starter-content" \
+              && make kind-load deploy IMAGE_TAG=starter WORKSPACE_NAMESPACE="$WORKSPACE_NS" )
+          kubectl -n "$WORKSPACE_NS" rollout status deploy/health-app --timeout=180s
+          # The starter app runs (no readiness gate) but exposes no actuator endpoints.
+          poll IAG_HealthChecksAdded_AppDeployedAndReady True 120
+          sleep 12   # let a couple of validator cycles confirm the probe goals
+          dump_conditions
+          assert_eq IAG_HealthChecksAdded_ReadinessProbeWired False
+          assert_eq IAG_HealthChecksAdded_LivenessProbeWired  False
+          assert_eq IA_Completed False
+
+      - name: Happy path - deploy solution, poll until GREEN
+        run: |
+          set -euo pipefail
+          source "$GITHUB_WORKSPACE/.github/scripts/lab-e2e-assert.sh"
+          ( cd "$LAB_PATH/solution" \
+              && make kind-load deploy IMAGE_TAG=solution WORKSPACE_NAMESPACE="$WORKSPACE_NS" )
+          kubectl -n "$WORKSPACE_NS" rollout status deploy/health-app --timeout=180s
+          poll IA_Completed True 240
+          dump_conditions
+          assert_eq IAC_HealthChecksAdded True
+          assert_eq IAG_HealthChecksAdded_AppDeployedAndReady True
+          assert_eq IAG_HealthChecksAdded_ReadinessProbeWired True
+          assert_eq IAG_HealthChecksAdded_LivenessProbeWired  True
+
+      - name: Print lab status
+        if: always()
+        run: tpm lab status --id "$RUN_ID" || true
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== workspace resources ==="
+          kubectl get all -n "$WORKSPACE_NS" || true
+          echo "=== deployment describe ==="
+          kubectl describe deploy/health-app -n "$WORKSPACE_NS" || true
+          echo "=== validator logs ==="
+          kubectl logs -n "$SYSTEM_NS" -l app.kubernetes.io/component=validator --tail=200 || true
+
+      - name: Cleanup lab
+        if: always()
+        run: tpm lab cleanup --id "$RUN_ID" || true
