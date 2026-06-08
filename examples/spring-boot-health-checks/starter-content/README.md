@@ -25,6 +25,20 @@ hung one.
 > Keep the Deployment and Service named `health-app` on port `8080`, and use the probe paths
 > `/actuator/health/readiness` and `/actuator/health/liveness` — that's what the lab checks.
 
+## Running the lab
+
+Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart),
+run from the `tpm` repo root:
+
+```sh
+tpm lab run examples/spring-boot-health-checks \
+  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment \
+  --chart-version 0.0.249
+```
+
+This prints a run id and your workspace namespace. (`0.0.249` is an example version — use the
+latest published `training-platform-assessment` chart tag.)
+
 ## Build and deploy
 
 > [!TIP]

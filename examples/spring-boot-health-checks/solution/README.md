@@ -12,6 +12,20 @@ liveness/readiness probe endpoints, deployed with both probes wired into the Dep
   endpoints, plus restricted Pod Security settings.
 - `k8s/service.yaml` is a ClusterIP Service in front of the Deployment.
 
+## Running the lab
+
+Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart),
+run from the `tpm` repo root:
+
+```sh
+tpm lab run examples/spring-boot-health-checks \
+  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment \
+  --chart-version 0.0.249
+```
+
+(`0.0.249` is an example version — use the latest published `training-platform-assessment`
+chart tag.)
+
 ## Build and deploy
 
 For kind:
