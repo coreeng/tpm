@@ -75,14 +75,20 @@ installed skill:
 git clone git@github.com:coreeng/tpm-authoring-labs-skill.git ~/.config/opencode/skills/authoring-labs
 ```
 
-## Example module
+## Example lab
 
-A minimal, fully-working example module lives in [`examples/`](examples/). From the repo
-root you can build it — `tpm build` validates the module against the embedded schemas
-before writing output:
+[`examples/spring-boot-health-checks/`](examples/spring-boot-health-checks/) is a complete,
+working example lab — "add Spring Boot health checks to an application" — authored with the
+[`authoring-labs`](https://github.com/coreeng/tpm-authoring-labs-skill) skill. It shows the
+full lab layout and a `validator/` that checks the learner's running workload.
+
+- [Learner task](examples/spring-boot-health-checks/starter-content/README.md) — what the learner starts with and has to do.
+- [Reference solution](examples/spring-boot-health-checks/solution/README.md) — the completed implementation.
+
+Run it locally against a kind cluster:
 
 ```bash
-tpm build examples/hello-module -o /tmp/hello-build
+tpm lab run examples/spring-boot-health-checks --chart-dir <lab-runtime-chart>
 ```
 
 ## Development

@@ -8,3 +8,6 @@ tpm.exe
 # Build artifacts / test output
 *.out
 coverage.txt
+
+# tpm lab run state
+.build/
