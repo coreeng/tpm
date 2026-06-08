@@ -14,12 +14,13 @@ generating codes and markdown, building modules, and running labs locally.
 ### Homebrew (macOS / Linux)
 
 ```bash
-brew install coreeng/tap/tpm
+brew install coreeng/public/tpm
 ```
 
-> The Homebrew formula is published by CI to the `coreeng/homebrew-tap` repository on
-> each release. If you have not tapped it before, Homebrew resolves `coreeng/tap`
-> automatically from the `coreeng/homebrew-tap` repo.
+> The Homebrew formula is published by CI to CECG's public tap
+> ([`coreeng/homebrew-public`](https://github.com/coreeng/homebrew-public)) on each
+> release. The `coreeng/public/tpm` shorthand taps that repo automatically; to browse
+> the tap's other tools, run `brew tap coreeng/public`.
 
 ### Pre-built binaries
 
