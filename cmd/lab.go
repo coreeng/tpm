@@ -59,6 +59,7 @@ func newLabRunCmd() *cobra.Command {
 			chartDir := strings.TrimSpace(opts.ChartDir)
 			chartURI := strings.TrimSpace(opts.ChartURI)
 			chartURIChanged := cmd.Flags().Changed("chart-uri")
+			chartVersion := strings.TrimSpace(opts.ChartVersion)
 			if chartDir != "" && chartURI != "" {
 				return fmt.Errorf("set either chart-dir or chart-uri, not both")
 			}
@@ -68,11 +69,12 @@ func newLabRunCmd() *cobra.Command {
 			if chartDir == "" && chartURI == "" {
 				return fmt.Errorf("chart-dir or chart-uri must be set")
 			}
-			if chartURI != "" && strings.TrimSpace(opts.ChartVersion) == "" {
+			if cmd.Flags().Changed("chart-version") && chartVersion == "" {
 				return fmt.Errorf("chart-version must not be blank")
 			}
 			opts.ChartDir = chartDir
 			opts.ChartURI = chartURI
+			opts.ChartVersion = chartVersion
 			opts.LabPath = args[0]
 			opts.LogWriter = cmd.OutOrStdout()
 			state, err := lab.Run(cmd.Context(), opts)

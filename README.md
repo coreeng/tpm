@@ -90,13 +90,12 @@ Run it locally against a kind cluster (the lab runtime is published as an OCI He
 
 ```bash
 tpm lab run examples/spring-boot-health-checks \
-  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment \
-  --chart-version 0.0.249
+  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
 > [!NOTE]
-> `0.0.249` is the lab-runtime chart version used here as an example — the latest
-> `training-platform-assessment` chart version may be newer. Use the most recent published tag.
+> By default, Helm uses the latest published version of the chart specified by `--chart-uri`.
+> Add `--chart-version <version>` to pin a specific chart version.
 
 ## Development
 

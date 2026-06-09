@@ -32,12 +32,12 @@ For example, from the `tpm` repo root:
 
 ```sh
 tpm lab run examples/spring-boot-health-checks \
-  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment \
-  --chart-version 0.0.249
+  --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
-This prints a run id and your workspace namespace. (`0.0.249` is an example version — use the
-latest published `training-platform-assessment` chart tag.)
+This prints a run id and your workspace namespace. By default, Helm uses the latest published
+version of the chart specified by `--chart-uri`. Add `--chart-version <version>` to pin a
+specific chart version.
 
 ## Build and deploy
 

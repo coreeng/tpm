@@ -159,6 +159,87 @@ func TestRunBuildsLoadsAndInstallsChart(t *testing.T) {
 	}
 }
 
+func TestRunInstallsOCIChartWithoutVersion(t *testing.T) {
+	repoRoot := t.TempDir()
+	labPath := filepath.Join(repoRoot, "labs", "pod-image-lab")
+	if err := ScaffoldStandalone(labPath, ScaffoldOptions{Name: "pod-image-lab"}); err != nil {
+		t.Fatalf("ScaffoldStandalone returned error: %v", err)
+	}
+	normalizedLabPath, err := normalizeLabPath(labPath)
+	if err != nil {
+		t.Fatalf("normalizeLabPath returned error: %v", err)
+	}
+
+	runner := NewFakeRunner()
+	for range 3 {
+		runner.QueueResponse(nil, nil)
+	}
+	runner.QueueResponse([]byte("kind-local\n"), nil)
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, errors.New("not found"))
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, errors.New("not found"))
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, nil)
+	runner.QueueResponse(nil, nil)
+
+	chartURI := "oci://example.com/charts/training-platform-assessment"
+	state, err := Run(context.Background(), Options{
+		LabPath:  labPath,
+		RepoRoot: repoRoot,
+		ID:       "abc123",
+		ChartURI: chartURI,
+		Runner:   runner,
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	validatorTag := "localhost/tpm-lab-pod-image-lab-validator:abc123"
+	commandsBeforeHelm := []Command{
+		{Name: "docker", Args: []string{"version"}},
+		{Name: "helm", Args: []string{"version"}},
+		{Name: "kubectl", Args: []string{"version", "--client"}},
+		{Name: "kubectl", Args: []string{"config", "current-context"}},
+		{Name: "kind", Args: []string{"version"}},
+		{Name: "docker", Args: []string{"build", "-t", validatorTag, filepath.Join(normalizedLabPath, "validator")}},
+		{Name: "kind", Args: []string{"load", "docker-image", "--name", "local", validatorTag}},
+		{Name: "kubectl", Args: []string{"get", "namespace", "lab-abc123-system"}},
+		{Name: "kubectl", Args: []string{"create", "namespace", "lab-abc123-system"}},
+		{Name: "kubectl", Args: []string{"label", "namespace", "lab-abc123-system", "training-platform.coreeng.io/managed-by=tpm", "training-platform.coreeng.io/lab-run-id=abc123", "training-platform.coreeng.io/lab-code=pod-image-lab", "training-platform.coreeng.io/lab-namespace-role=system", "--overwrite"}},
+		{Name: "kubectl", Args: []string{"get", "namespace", "lab-abc123-workspace"}},
+		{Name: "kubectl", Args: []string{"create", "namespace", "lab-abc123-workspace"}},
+		{Name: "kubectl", Args: []string{"label", "namespace", "lab-abc123-workspace", "training-platform.coreeng.io/managed-by=tpm", "training-platform.coreeng.io/lab-run-id=abc123", "training-platform.coreeng.io/lab-code=pod-image-lab", "training-platform.coreeng.io/lab-namespace-role=workspace", "pod-security.kubernetes.io/enforce=restricted", "pod-security.kubernetes.io/audit=restricted", "--overwrite"}},
+	}
+	if len(runner.Commands) != len(commandsBeforeHelm)+2 {
+		t.Fatalf("recorded %d commands, want %d: %#v", len(runner.Commands), len(commandsBeforeHelm)+2, runner.Commands)
+	}
+	if !reflect.DeepEqual(runner.Commands[:len(commandsBeforeHelm)], commandsBeforeHelm) {
+		t.Fatalf("commands before helm = %#v, want %#v", runner.Commands[:len(commandsBeforeHelm)], commandsBeforeHelm)
+	}
+
+	showChart := runner.Commands[len(commandsBeforeHelm)]
+	wantShowChart := Command{Name: "helm", Args: []string{"show", "chart", chartURI}}
+	if !reflect.DeepEqual(showChart, wantShowChart) {
+		t.Fatalf("helm show chart command = %#v, want %#v", showChart, wantShowChart)
+	}
+
+	helm := runner.Commands[len(runner.Commands)-1]
+	wantHelmPrefix := []string{"upgrade", "--install", "lab-abc123", chartURI, "-n", "lab-abc123-system"}
+	if helm.Name != "helm" || len(helm.Args) < len(wantHelmPrefix) || !reflect.DeepEqual(helm.Args[:len(wantHelmPrefix)], wantHelmPrefix) {
+		t.Fatalf("helm command = %#v, want prefix %#v", helm, wantHelmPrefix)
+	}
+	if containsArg(helm.Args, "--version") {
+		t.Fatalf("unversioned OCI chart helm args should not contain --version: %#v", helm.Args)
+	}
+	if state.ChartVersion != "" {
+		t.Fatalf("state ChartVersion = %q, want empty", state.ChartVersion)
+	}
+}
+
 func TestRunInstallsLocalChartDirectoryWithoutVersion(t *testing.T) {
 	repoRoot := t.TempDir()
 	labPath := filepath.Join(repoRoot, "labs", "pod-image-lab")
