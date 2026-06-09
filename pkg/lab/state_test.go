@@ -26,6 +26,30 @@ func TestRunNamesUseLabPrefix(t *testing.T) {
 	}
 }
 
+func TestStateDirDefaultsToUserConfig(t *testing.T) {
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+
+	want := filepath.Join(homeDir, ".config", "tpm")
+	if got := StateDir("."); got != want {
+		t.Fatalf("StateDir(.) = %q, want %q", got, want)
+	}
+	if got := StateDir(""); got != want {
+		t.Fatalf("StateDir(\"\") = %q, want %q", got, want)
+	}
+}
+
+func TestStateDirFallsBackWhenHomeIsUnavailable(t *testing.T) {
+	t.Setenv("HOME", "")
+
+	if got := StateDir("/repo"); got != filepath.Join("/repo", ".build", "tpm", "labs") {
+		t.Fatalf("StateDir fallback = %q", got)
+	}
+	if got := StateDir(""); got != filepath.Join(".", ".build", "tpm", "labs") {
+		t.Fatalf("StateDir empty-root fallback = %q", got)
+	}
+}
+
 func TestStateRoundTrip(t *testing.T) {
 	stateDir := StateDir(t.TempDir())
 	createdAt := time.Date(2026, 6, 2, 10, 11, 12, 0, time.UTC)
@@ -106,7 +130,7 @@ func TestLatestStateForLabPath(t *testing.T) {
 }
 
 func TestLatestStateForMissingStateDir(t *testing.T) {
-	latest, err := FindLatestState(StateDir(t.TempDir()), "labs/create-config-map")
+	latest, err := FindLatestState(filepath.Join(t.TempDir(), "missing-state"), "labs/create-config-map")
 	if err != nil {
 		t.Fatalf("FindLatestState returned error: %v", err)
 	}

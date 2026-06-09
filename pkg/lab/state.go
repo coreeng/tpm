@@ -9,6 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const DefaultStateDirHelp = "~/.config/tpm"
+
 type RunState struct {
 	LabPath            string    `yaml:"labPath"`
 	RunID              string    `yaml:"runID"`
@@ -26,6 +28,13 @@ type RunState struct {
 }
 
 func StateDir(repoRoot string) string {
+	homeDir, err := os.UserHomeDir()
+	if err == nil && homeDir != "" {
+		return filepath.Join(homeDir, ".config", "tpm")
+	}
+	if repoRoot == "" {
+		repoRoot = "."
+	}
 	return filepath.Join(repoRoot, ".build", "tpm", "labs")
 }
 

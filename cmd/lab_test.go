@@ -73,6 +73,23 @@ func TestLabListHelpShowsStateDirFlag(t *testing.T) {
 	}
 }
 
+func TestLabStateDirHelpShowsUserConfigDefault(t *testing.T) {
+	for _, args := range [][]string{
+		{"lab", "run", "--help"},
+		{"lab", "list", "--help"},
+		{"lab", "status", "--help"},
+		{"lab", "cleanup", "--help"},
+	} {
+		output, err := executeRootCommand(args...)
+		if err != nil {
+			t.Fatalf("%s returned error: %v\n%s", strings.Join(args, " "), err, output)
+		}
+		if !strings.Contains(output, "lab state directory (default ~/.config/tpm)") {
+			t.Fatalf("%s help has wrong state-dir default:\n%s", strings.Join(args, " "), output)
+		}
+	}
+}
+
 func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
 	output, err := executeRootCommand("lab", "run", "does-not-exist", "--chart-dir", "/tmp/local-chart")
 	if err == nil {
