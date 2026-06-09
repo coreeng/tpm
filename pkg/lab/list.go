@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"time"
 )
 
 func List(ctx context.Context, opts Options) (string, error) {
@@ -64,13 +66,31 @@ func List(ctx context.Context, opts Options) (string, error) {
 	if len(rows) == 0 {
 		return "No active labs found\n", nil
 	}
-	sort.Slice(rows, func(i, j int) bool { return rows[i].RunID < rows[j].RunID })
+	opts.resolveStateDir()
+	for i := range rows {
+		// A missing, unreadable, or corrupt state file just means we cannot show
+		// a created time for this lab; skip it rather than failing the whole list.
+		state, err := LoadState(filepath.Join(opts.StateDir, rows[i].RunID+".yaml"))
+		if err != nil {
+			continue
+		}
+		rows[i].CreatedAt = state.CreatedAt
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].CreatedAt.IsZero() != rows[j].CreatedAt.IsZero() {
+			return !rows[i].CreatedAt.IsZero()
+		}
+		if !rows[i].CreatedAt.Equal(rows[j].CreatedAt) {
+			return rows[i].CreatedAt.After(rows[j].CreatedAt)
+		}
+		return rows[i].RunID < rows[j].RunID
+	})
 
 	var b strings.Builder
 	w := tabwriter.NewWriter(&b, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "RUN ID\tLAB CODE\tSYSTEM NAMESPACE\tWORKSPACE NAMESPACE")
+	fmt.Fprintln(w, "RUN ID\tLAB CODE\tCREATED\tSYSTEM NAMESPACE\tWORKSPACE NAMESPACE")
 	for _, lab := range rows {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", lab.RunID, lab.LabCode, lab.SystemNamespace, lab.WorkspaceNamespace)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", lab.RunID, lab.LabCode, formatCreatedAt(lab.CreatedAt), lab.SystemNamespace, lab.WorkspaceNamespace)
 	}
 	if err := w.Flush(); err != nil {
 		return "", fmt.Errorf("render lab list: %w", err)
@@ -92,6 +112,14 @@ type kubectlNamespace struct {
 type listedLab struct {
 	RunID              string
 	LabCode            string
+	CreatedAt          time.Time
 	SystemNamespace    string
 	WorkspaceNamespace string
+}
+
+func formatCreatedAt(createdAt time.Time) string {
+	if createdAt.IsZero() {
+		return "-"
+	}
+	return createdAt.UTC().Format(time.RFC3339)
 }

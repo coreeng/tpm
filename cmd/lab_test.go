@@ -63,6 +63,30 @@ func TestLabRunHelpShowsRuntimeFlags(t *testing.T) {
 	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
+func TestLabListHelpShowsStateDirFlag(t *testing.T) {
+	output, err := executeRootCommand("lab", "list", "--help")
+	if err != nil {
+		t.Fatalf("lab list --help returned error: %v\n%s", err, output)
+	}
+
+	assertStateDirHelpShowsConfigDefault(t, output)
+}
+
+func TestLabStateDirHelpShowsUserConfigDefault(t *testing.T) {
+	for _, args := range [][]string{
+		{"lab", "run", "--help"},
+		{"lab", "list", "--help"},
+		{"lab", "status", "--help"},
+		{"lab", "cleanup", "--help"},
+	} {
+		output, err := executeRootCommand(args...)
+		if err != nil {
+			t.Fatalf("%s returned error: %v\n%s", strings.Join(args, " "), err, output)
+		}
+		assertStateDirHelpShowsConfigDefault(t, output)
+	}
+}
+
 func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
 	output, err := executeRootCommand("lab", "run", "does-not-exist", "--chart-dir", "/tmp/local-chart")
 	if err == nil {
@@ -124,7 +148,7 @@ func assertStateDirHelpShowsConfigDefault(t *testing.T, output string) {
 	if !strings.Contains(output, "--state-dir") {
 		t.Fatalf("lab help does not contain --state-dir:\n%s", output)
 	}
-	if !strings.Contains(output, "default ~/.config/tpm/labs") {
+	if !strings.Contains(output, "default ~/.config/tpm") {
 		t.Fatalf("lab help does not describe config-dir state default:\n%s", output)
 	}
 	if strings.Contains(output, "default .build/tpm/labs") {

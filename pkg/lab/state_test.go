@@ -1,7 +1,6 @@
 package lab
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,6 +23,30 @@ func TestRunNamesUseLabPrefix(t *testing.T) {
 	}
 	if strings.Contains(names.WorkspaceNamespace, "assessment") {
 		t.Errorf("WorkspaceNamespace %q contains assessment", names.WorkspaceNamespace)
+	}
+}
+
+func TestStateDirDefaultsToUserConfig(t *testing.T) {
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+
+	want := filepath.Join(homeDir, ".config", "tpm")
+	if got := StateDir("."); got != want {
+		t.Fatalf("StateDir(.) = %q, want %q", got, want)
+	}
+	if got := StateDir(""); got != want {
+		t.Fatalf("StateDir(\"\") = %q, want %q", got, want)
+	}
+}
+
+func TestStateDirFallsBackWhenHomeIsUnavailable(t *testing.T) {
+	t.Setenv("HOME", "")
+
+	if got := StateDir("/repo"); got != filepath.Join("/repo", ".build", "tpm", "labs") {
+		t.Fatalf("StateDir fallback = %q", got)
+	}
+	if got := StateDir(""); got != filepath.Join(".", ".build", "tpm", "labs") {
+		t.Fatalf("StateDir empty-root fallback = %q", got)
 	}
 }
 
@@ -52,21 +75,6 @@ func TestStateRoundTrip(t *testing.T) {
 	}
 	if diff := cmp.Diff(&state, loaded); diff != "" {
 		t.Fatalf("loaded state mismatch (-want +got):\n%s", diff)
-	}
-}
-
-func TestStateDirDefaultsToUserConfigDir(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-
-	stateDir := StateDir(t.TempDir())
-
-	want := filepath.Join(home, ".config", "tpm", "labs")
-	if stateDir != want {
-		t.Fatalf("StateDir() = %q, want %q", stateDir, want)
-	}
-	if strings.Contains(stateDir, string(os.PathSeparator)+".build"+string(os.PathSeparator)) {
-		t.Fatalf("StateDir() = %q, should not use repo-local .build", stateDir)
 	}
 }
 
@@ -122,7 +130,7 @@ func TestLatestStateForLabPath(t *testing.T) {
 }
 
 func TestLatestStateForMissingStateDir(t *testing.T) {
-	latest, err := FindLatestState(filepath.Join(t.TempDir(), "state"), "labs/create-config-map")
+	latest, err := FindLatestState(filepath.Join(t.TempDir(), "missing-state"), "labs/create-config-map")
 	if err != nil {
 		t.Fatalf("FindLatestState returned error: %v", err)
 	}

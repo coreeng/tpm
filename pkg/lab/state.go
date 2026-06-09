@@ -9,6 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const DefaultStateDirHelp = "~/.config/tpm"
+
 type RunState struct {
 	LabPath            string    `yaml:"labPath"`
 	RunID              string    `yaml:"runID"`
@@ -25,10 +27,24 @@ type RunState struct {
 	CreatedAt          time.Time `yaml:"createdAt"`
 }
 
+// resolveStateDir fills in the default RepoRoot and StateDir on opts when they
+// are unset, so every command derives the state directory the same way.
+func (opts *Options) resolveStateDir() {
+	if opts.RepoRoot == "" {
+		opts.RepoRoot = "."
+	}
+	if opts.StateDir == "" {
+		opts.StateDir = StateDir(opts.RepoRoot)
+	}
+}
+
 func StateDir(repoRoot string) string {
-	home, err := os.UserHomeDir()
-	if err == nil && home != "" {
-		return filepath.Join(home, ".config", "tpm", "labs")
+	homeDir, err := os.UserHomeDir()
+	if err == nil && homeDir != "" {
+		return filepath.Join(homeDir, ".config", "tpm")
+	}
+	if repoRoot == "" {
+		repoRoot = "."
 	}
 	return filepath.Join(repoRoot, ".build", "tpm", "labs")
 }
@@ -60,12 +76,7 @@ func LoadState(path string) (*RunState, error) {
 }
 
 func resolveState(opts Options) (*RunState, string, error) {
-	if opts.RepoRoot == "" {
-		opts.RepoRoot = "."
-	}
-	if opts.StateDir == "" {
-		opts.StateDir = StateDir(opts.RepoRoot)
-	}
+	opts.resolveStateDir()
 	if opts.ID != "" {
 		if err := validateRunID(opts.ID); err != nil {
 			return nil, "", err
