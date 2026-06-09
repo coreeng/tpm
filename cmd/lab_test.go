@@ -60,9 +60,7 @@ func TestLabRunHelpShowsRuntimeFlags(t *testing.T) {
 	if strings.Contains(output, "--local-registry-node-port") {
 		t.Fatalf("lab run help contains removed local registry NodePort flag:\n%s", output)
 	}
-	if !strings.Contains(output, "default ~/.config/tpm/labs") {
-		t.Fatalf("lab run help does not describe config-dir state default:\n%s", output)
-	}
+	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
 func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
@@ -100,6 +98,15 @@ func TestLabCleanupHelpShowsSupportedFlags(t *testing.T) {
 	if strings.Contains(output, "--all ") || strings.Contains(output, "--all=") {
 		t.Fatalf("lab cleanup exposes unsupported --all flag:\n%s", output)
 	}
+	assertStateDirHelpShowsConfigDefault(t, output)
+}
+
+func TestLabStatusHelpShowsConfigStateDirDefault(t *testing.T) {
+	output, err := executeRootCommand("lab", "status", "--help")
+	if err != nil {
+		t.Fatalf("lab status --help returned error: %v\n%s", err, output)
+	}
+	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
 func TestLabRunValidatesLabPathArgument(t *testing.T) {
@@ -109,6 +116,19 @@ func TestLabRunValidatesLabPathArgument(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "accepts 1 arg") && !strings.Contains(output, "accepts 1 arg") {
 		t.Fatalf("error/output does not report missing lab path\nerror: %v\noutput:\n%s", err, output)
+	}
+}
+
+func assertStateDirHelpShowsConfigDefault(t *testing.T, output string) {
+	t.Helper()
+	if !strings.Contains(output, "--state-dir") {
+		t.Fatalf("lab help does not contain --state-dir:\n%s", output)
+	}
+	if !strings.Contains(output, "default ~/.config/tpm/labs") {
+		t.Fatalf("lab help does not describe config-dir state default:\n%s", output)
+	}
+	if strings.Contains(output, "default .build/tpm/labs") {
+		t.Fatalf("lab help still describes repo-local state default:\n%s", output)
 	}
 }
 
