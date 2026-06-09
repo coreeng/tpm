@@ -14,8 +14,8 @@ liveness/readiness probe endpoints, deployed with both probes wired into the Dep
 
 ## Running the lab
 
-Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart),
-run from the `tpm` repo root:
+Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart).
+For example, from the `tpm` repo root:
 
 ```sh
 tpm lab run examples/spring-boot-health-checks \

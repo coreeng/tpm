@@ -116,7 +116,7 @@ func TestRunBuildsLoadsAndInstallsChart(t *testing.T) {
 		"registry.service.nodePort=",
 	)
 
-	starterTarball := filepath.Join(repoRoot, ".build", "tpm", "labs", "abc123", "starter-content.tar.gz")
+	starterTarball := filepath.Join(stateDir, "abc123", "starter-content.tar.gz")
 	assertFileExists(t, starterTarball)
 
 	loadedState, err := LoadState(filepath.Join(stateDir, "abc123.yaml"))

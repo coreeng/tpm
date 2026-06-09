@@ -1,6 +1,7 @@
 package lab
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -27,7 +28,7 @@ func TestRunNamesUseLabPrefix(t *testing.T) {
 }
 
 func TestStateRoundTrip(t *testing.T) {
-	stateDir := StateDir(t.TempDir())
+	stateDir := filepath.Join(t.TempDir(), "state")
 	createdAt := time.Date(2026, 6, 2, 10, 11, 12, 0, time.UTC)
 	state := RunState{
 		LabPath:            "labs/create-config-map",
@@ -54,8 +55,23 @@ func TestStateRoundTrip(t *testing.T) {
 	}
 }
 
-func TestLatestStateForLabPath(t *testing.T) {
+func TestStateDirDefaultsToUserConfigDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
 	stateDir := StateDir(t.TempDir())
+
+	want := filepath.Join(home, ".config", "tpm", "labs")
+	if stateDir != want {
+		t.Fatalf("StateDir() = %q, want %q", stateDir, want)
+	}
+	if strings.Contains(stateDir, string(os.PathSeparator)+".build"+string(os.PathSeparator)) {
+		t.Fatalf("StateDir() = %q, should not use repo-local .build", stateDir)
+	}
+}
+
+func TestLatestStateForLabPath(t *testing.T) {
+	stateDir := filepath.Join(t.TempDir(), "state")
 	older := RunState{
 		LabPath:            "labs/create-config-map",
 		RunID:              "old",
@@ -106,7 +122,7 @@ func TestLatestStateForLabPath(t *testing.T) {
 }
 
 func TestLatestStateForMissingStateDir(t *testing.T) {
-	latest, err := FindLatestState(StateDir(t.TempDir()), "labs/create-config-map")
+	latest, err := FindLatestState(filepath.Join(t.TempDir(), "state"), "labs/create-config-map")
 	if err != nil {
 		t.Fatalf("FindLatestState returned error: %v", err)
 	}

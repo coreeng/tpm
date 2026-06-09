@@ -109,7 +109,7 @@ func newLabStatusCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.ID, "id", "", "lab run ID")
-	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default .build/tpm/labs)")
+	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default ~/.config/tpm/labs)")
 	return cmd
 }
 
@@ -124,13 +124,13 @@ func newLabCleanupCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.ID, "id", "", "lab run ID")
-	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default .build/tpm/labs)")
+	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default ~/.config/tpm/labs)")
 	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not kind-")
 	return cmd
 }
 
 func addSharedLabFlags(cmd *cobra.Command, opts *lab.Options) {
 	cmd.Flags().StringVar(&opts.ID, "id", "", "lab run ID (default generated)")
-	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default .build/tpm/labs)")
+	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default ~/.config/tpm/labs)")
 	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not kind-")
 }

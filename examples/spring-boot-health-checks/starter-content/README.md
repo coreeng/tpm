@@ -27,8 +27,8 @@ hung one.
 
 ## Running the lab
 
-Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart),
-run from the `tpm` repo root:
+Start the lab locally against a kind cluster (the lab runtime is a published OCI Helm chart).
+For example, from the `tpm` repo root:
 
 ```sh
 tpm lab run examples/spring-boot-health-checks \
@@ -74,9 +74,7 @@ The lab tracks three goals:
 When all three are green, the challenge is complete.
 
 > [!TIP]
-> Check your progress with `tpm lab status --id <lab-id>`. Run it from the `tpm` root
-> directory — the command reads the lab run state from `./.build/tpm/labs/` relative to your
-> current directory (or pass `--state-dir <path>`).
+> Check your progress with `tpm lab status --id <lab-id>`.
 
 ## Clean up
 
@@ -87,4 +85,4 @@ tpm lab cleanup --id <lab-id>
 ```
 
 > [!NOTE]
-> Like `tpm lab status`, run this from the `tpm` root directory (or pass `--state-dir <path>`).
+> Use `--state-dir <path>` if you started the lab with a custom state directory.

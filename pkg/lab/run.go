@@ -165,7 +165,7 @@ func Run(ctx context.Context, opts Options) (*RunState, error) {
 		return nil, err
 	}
 
-	starterTarball := filepath.Join(opts.RepoRoot, ".build", "tpm", "labs", opts.ID, "starter-content.tar.gz")
+	starterTarball := filepath.Join(opts.StateDir, opts.ID, "starter-content.tar.gz")
 	logStep(opts, "Packaging starter content...")
 	if err := writeTarGz(lab.StarterPath, starterTarball); err != nil {
 		return nil, fmt.Errorf("package lab starter content: %w", err)

@@ -26,6 +26,10 @@ type RunState struct {
 }
 
 func StateDir(repoRoot string) string {
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		return filepath.Join(home, ".config", "tpm", "labs")
+	}
 	return filepath.Join(repoRoot, ".build", "tpm", "labs")
 }
 
