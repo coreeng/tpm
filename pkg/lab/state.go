@@ -27,6 +27,17 @@ type RunState struct {
 	CreatedAt          time.Time `yaml:"createdAt"`
 }
 
+// resolveStateDir fills in the default RepoRoot and StateDir on opts when they
+// are unset, so every command derives the state directory the same way.
+func (opts *Options) resolveStateDir() {
+	if opts.RepoRoot == "" {
+		opts.RepoRoot = "."
+	}
+	if opts.StateDir == "" {
+		opts.StateDir = StateDir(opts.RepoRoot)
+	}
+}
+
 func StateDir(repoRoot string) string {
 	homeDir, err := os.UserHomeDir()
 	if err == nil && homeDir != "" {
@@ -65,12 +76,7 @@ func LoadState(path string) (*RunState, error) {
 }
 
 func resolveState(opts Options) (*RunState, string, error) {
-	if opts.RepoRoot == "" {
-		opts.RepoRoot = "."
-	}
-	if opts.StateDir == "" {
-		opts.StateDir = StateDir(opts.RepoRoot)
-	}
+	opts.resolveStateDir()
 	if opts.ID != "" {
 		if err := validateRunID(opts.ID); err != nil {
 			return nil, "", err

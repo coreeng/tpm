@@ -64,12 +64,7 @@ func Run(ctx context.Context, opts Options) (*RunState, error) {
 	if err := validateRunID(opts.ID); err != nil {
 		return nil, err
 	}
-	if opts.RepoRoot == "" {
-		opts.RepoRoot = "."
-	}
-	if opts.StateDir == "" {
-		opts.StateDir = StateDir(opts.RepoRoot)
-	}
+	opts.resolveStateDir()
 	if opts.CheckInterval == 0 {
 		opts.CheckInterval = 5 * time.Second
 	}

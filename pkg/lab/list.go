@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -67,19 +66,13 @@ func List(ctx context.Context, opts Options) (string, error) {
 	if len(rows) == 0 {
 		return "No active labs found\n", nil
 	}
-	if opts.RepoRoot == "" {
-		opts.RepoRoot = "."
-	}
-	if opts.StateDir == "" {
-		opts.StateDir = StateDir(opts.RepoRoot)
-	}
+	opts.resolveStateDir()
 	for i := range rows {
+		// A missing, unreadable, or corrupt state file just means we cannot show
+		// a created time for this lab; skip it rather than failing the whole list.
 		state, err := LoadState(filepath.Join(opts.StateDir, rows[i].RunID+".yaml"))
 		if err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			return "", fmt.Errorf("load lab run state for %q: %w", rows[i].RunID, err)
+			continue
 		}
 		rows[i].CreatedAt = state.CreatedAt
 	}
