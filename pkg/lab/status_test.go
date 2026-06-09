@@ -12,7 +12,7 @@ import (
 func TestStatusRendersLabTerms(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := repoRoot + "/state"
 	labPath := repoRoot + "/labs/pod-image-lab"
 	state := RunState{
 		LabPath:            labPath,
@@ -90,7 +90,7 @@ func TestStatusRendersLabTerms(t *testing.T) {
 func TestStatusRendersFailedProvisioningWhenValidatorPodMissing(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := repoRoot + "/state"
 	state := testRunState(t, stateDir, repoRoot+"/labs/pod-image-lab")
 	runner := NewFakeRunner()
 	runner.QueueResponse([]byte(`{"items": []}`), nil)
@@ -115,7 +115,7 @@ func TestStatusRendersFailedProvisioningWhenValidatorPodMissing(t *testing.T) {
 func TestStatusRejectsMultipleValidatorPods(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := repoRoot + "/state"
 	state := testRunState(t, stateDir, repoRoot+"/labs/pod-image-lab")
 	runner := NewFakeRunner()
 	runner.QueueResponse([]byte(`{"items": [{"metadata": {"name": "validator-a"}}, {"metadata": {"name": "validator-b"}}]}`), nil)
@@ -129,7 +129,7 @@ func TestStatusRejectsMultipleValidatorPods(t *testing.T) {
 func TestStatusSortsConditions(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := repoRoot + "/state"
 	state := testRunState(t, stateDir, repoRoot+"/labs/pod-image-lab")
 	runner := NewFakeRunner()
 	runner.QueueResponse([]byte(`{
@@ -197,7 +197,7 @@ Lab Progress
 func TestStatusReturnsKubectlAndJSONErrors(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := repoRoot + "/state"
 	state := testRunState(t, stateDir, repoRoot+"/labs/pod-image-lab")
 
 	runner := NewFakeRunner()

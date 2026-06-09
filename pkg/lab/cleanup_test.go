@@ -15,7 +15,7 @@ import (
 func TestCleanupDeletesOnlyRecordedNamespaces(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := filepath.Join(repoRoot, "state")
 	labPath := filepath.Join(repoRoot, "labs", "create-config-map")
 	createLabDirs(t, labPath)
 
@@ -57,7 +57,7 @@ func TestCleanupDeletesOnlyRecordedNamespaces(t *testing.T) {
 func TestCleanupRejectsNonKindContextByDefault(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := filepath.Join(repoRoot, "state")
 	labPath := filepath.Join(repoRoot, "labs", "create-config-map")
 	createLabDirs(t, labPath)
 	state := cleanupTestState(labPath)
@@ -86,7 +86,7 @@ func TestCleanupRejectsNonKindContextByDefault(t *testing.T) {
 func TestCleanupAllowsNonKindContextWhenExplicitlyAllowed(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := filepath.Join(repoRoot, "state")
 	labPath := filepath.Join(repoRoot, "labs", "create-config-map")
 	createLabDirs(t, labPath)
 	state := cleanupTestState(labPath)
@@ -114,7 +114,7 @@ func TestCleanupAllowsNonKindContextWhenExplicitlyAllowed(t *testing.T) {
 func TestCleanupAttemptsAllDeletesAndKeepsStateOnFailure(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := filepath.Join(repoRoot, "state")
 	labPath := filepath.Join(repoRoot, "labs", "create-config-map")
 	createLabDirs(t, labPath)
 	state := cleanupTestState(labPath)
@@ -152,7 +152,7 @@ func TestCleanupAttemptsAllDeletesAndKeepsStateOnFailure(t *testing.T) {
 func TestCleanupRemovesStateWhenResourcesAlreadyDeleted(t *testing.T) {
 	ctx := context.Background()
 	repoRoot := t.TempDir()
-	stateDir := StateDir(repoRoot)
+	stateDir := filepath.Join(repoRoot, "state")
 	labPath := filepath.Join(repoRoot, "labs", "create-config-map")
 	createLabDirs(t, labPath)
 	state := cleanupTestState(labPath)

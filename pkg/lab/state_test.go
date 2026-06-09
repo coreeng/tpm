@@ -51,7 +51,7 @@ func TestStateDirFallsBackWhenHomeIsUnavailable(t *testing.T) {
 }
 
 func TestStateRoundTrip(t *testing.T) {
-	stateDir := StateDir(t.TempDir())
+	stateDir := filepath.Join(t.TempDir(), "state")
 	createdAt := time.Date(2026, 6, 2, 10, 11, 12, 0, time.UTC)
 	state := RunState{
 		LabPath:            "labs/create-config-map",
@@ -79,7 +79,7 @@ func TestStateRoundTrip(t *testing.T) {
 }
 
 func TestLatestStateForLabPath(t *testing.T) {
-	stateDir := StateDir(t.TempDir())
+	stateDir := filepath.Join(t.TempDir(), "state")
 	older := RunState{
 		LabPath:            "labs/create-config-map",
 		RunID:              "old",

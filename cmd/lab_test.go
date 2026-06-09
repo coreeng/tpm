@@ -60,6 +60,7 @@ func TestLabRunHelpShowsRuntimeFlags(t *testing.T) {
 	if strings.Contains(output, "--local-registry-node-port") {
 		t.Fatalf("lab run help contains removed local registry NodePort flag:\n%s", output)
 	}
+	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
 func TestLabListHelpShowsStateDirFlag(t *testing.T) {
@@ -68,9 +69,7 @@ func TestLabListHelpShowsStateDirFlag(t *testing.T) {
 		t.Fatalf("lab list --help returned error: %v\n%s", err, output)
 	}
 
-	if !strings.Contains(output, "--state-dir") {
-		t.Fatalf("lab list help does not contain --state-dir:\n%s", output)
-	}
+	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
 func TestLabStateDirHelpShowsUserConfigDefault(t *testing.T) {
@@ -84,9 +83,7 @@ func TestLabStateDirHelpShowsUserConfigDefault(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s returned error: %v\n%s", strings.Join(args, " "), err, output)
 		}
-		if !strings.Contains(output, "lab state directory (default ~/.config/tpm)") {
-			t.Fatalf("%s help has wrong state-dir default:\n%s", strings.Join(args, " "), output)
-		}
+		assertStateDirHelpShowsConfigDefault(t, output)
 	}
 }
 
@@ -125,6 +122,15 @@ func TestLabCleanupHelpShowsSupportedFlags(t *testing.T) {
 	if strings.Contains(output, "--all ") || strings.Contains(output, "--all=") {
 		t.Fatalf("lab cleanup exposes unsupported --all flag:\n%s", output)
 	}
+	assertStateDirHelpShowsConfigDefault(t, output)
+}
+
+func TestLabStatusHelpShowsConfigStateDirDefault(t *testing.T) {
+	output, err := executeRootCommand("lab", "status", "--help")
+	if err != nil {
+		t.Fatalf("lab status --help returned error: %v\n%s", err, output)
+	}
+	assertStateDirHelpShowsConfigDefault(t, output)
 }
 
 func TestLabRunValidatesLabPathArgument(t *testing.T) {
@@ -134,6 +140,19 @@ func TestLabRunValidatesLabPathArgument(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "accepts 1 arg") && !strings.Contains(output, "accepts 1 arg") {
 		t.Fatalf("error/output does not report missing lab path\nerror: %v\noutput:\n%s", err, output)
+	}
+}
+
+func assertStateDirHelpShowsConfigDefault(t *testing.T, output string) {
+	t.Helper()
+	if !strings.Contains(output, "--state-dir") {
+		t.Fatalf("lab help does not contain --state-dir:\n%s", output)
+	}
+	if !strings.Contains(output, "default ~/.config/tpm") {
+		t.Fatalf("lab help does not describe config-dir state default:\n%s", output)
+	}
+	if strings.Contains(output, "default .build/tpm/labs") {
+		t.Fatalf("lab help still describes repo-local state default:\n%s", output)
 	}
 }
 
