@@ -98,6 +98,17 @@ func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
 	}
 }
 
+func TestLabRunAcceptsChartURIWithoutChartVersion(t *testing.T) {
+	output, err := executeRootCommand("lab", "run", "does-not-exist", "--chart-uri", "oci://example.com/chart")
+	if err == nil {
+		// The lab path is intentionally invalid, so success would be unexpected.
+		t.Fatalf("lab run returned nil error, output:\n%s", output)
+	}
+	if strings.Contains(err.Error(), "chart-version") || strings.Contains(output, "chart-version") {
+		t.Fatalf("chart-uri should not require chart-version\nerror: %v\noutput:\n%s", err, output)
+	}
+}
+
 func TestLabRunRejectsConflictingChartSources(t *testing.T) {
 	output, err := executeRootCommand("lab", "run", "does-not-exist", "--chart-dir", "/tmp/local-chart", "--chart-uri", "oci://example.com/chart", "--chart-version", "1.2.3")
 	if err == nil {

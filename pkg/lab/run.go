@@ -173,7 +173,7 @@ func Run(ctx context.Context, opts Options) (*RunState, error) {
 	helmArgs := []string{
 		"upgrade", "--install", release, chartRef,
 	}
-	if opts.ChartURI != "" {
+	if opts.ChartURI != "" && opts.ChartVersion != "" {
 		helmArgs = append(helmArgs, "--version", opts.ChartVersion)
 	}
 	helmArgs = append(helmArgs,
@@ -192,15 +192,24 @@ func Run(ctx context.Context, opts Options) (*RunState, error) {
 		"--set", "validator.extraEnv[0].value="+opts.CheckInterval.String(),
 	)
 	if opts.ChartURI != "" {
-		logStep(opts, "Checking lab runtime chart %s...", opts.ChartVersion)
+		showArgs := []string{"show", "chart", opts.ChartURI}
+		chartDisplay := "latest version"
+		if opts.ChartVersion != "" {
+			showArgs = append(showArgs, "--version", opts.ChartVersion)
+			chartDisplay = opts.ChartVersion
+		}
+		logStep(opts, "Checking lab runtime chart %s...", chartDisplay)
 		logStep(opts, "Pulling/rendering chart with Helm may take a minute for OCI charts.")
-		if err := runner.Run(ctx, "helm", "show", "chart", opts.ChartURI, "--version", opts.ChartVersion); err != nil {
+		if err := runner.Run(ctx, "helm", showArgs...); err != nil {
 			return nil, explainHelmChartAccessError(opts.ChartURI, err)
 		}
 	}
 	chartDisplay := chartRef
 	if opts.ChartURI != "" {
-		chartDisplay = opts.ChartVersion
+		chartDisplay = "latest version"
+		if opts.ChartVersion != "" {
+			chartDisplay = opts.ChartVersion
+		}
 	}
 	logStep(opts, "Installing lab runtime chart %s as release %s in %s...", chartDisplay, release, names.SystemNamespace)
 	logStep(opts, "Helm release will appear after chart pull/render succeeds.")
