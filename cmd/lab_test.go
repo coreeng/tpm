@@ -62,6 +62,17 @@ func TestLabRunHelpShowsRuntimeFlags(t *testing.T) {
 	}
 }
 
+func TestLabListHelpShowsStateDirFlag(t *testing.T) {
+	output, err := executeRootCommand("lab", "list", "--help")
+	if err != nil {
+		t.Fatalf("lab list --help returned error: %v\n%s", err, output)
+	}
+
+	if !strings.Contains(output, "--state-dir") {
+		t.Fatalf("lab list help does not contain --state-dir:\n%s", output)
+	}
+}
+
 func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
 	output, err := executeRootCommand("lab", "run", "does-not-exist", "--chart-dir", "/tmp/local-chart")
 	if err == nil {

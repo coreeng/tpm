@@ -44,6 +44,7 @@ func newLabListCmd() *cobra.Command {
 			return err
 		},
 	}
+	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default .build/tpm/labs)")
 	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow listing labs against a kubectl context that is not kind-")
 	return cmd
 }

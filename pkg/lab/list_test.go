@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestListGroupsNamespacesByRunID(t *testing.T) {
@@ -37,6 +38,42 @@ func TestListGroupsNamespacesByRunID(t *testing.T) {
 		"lab-def456-workspace",
 	}
 	assertContainsInOrder(t, output, wantLines)
+}
+
+func TestListIncludesCreatedTimeAndSortsNewestFirst(t *testing.T) {
+	repoRoot := t.TempDir()
+	stateDir := StateDir(repoRoot)
+	olderCreatedAt := time.Date(2026, 6, 2, 10, 0, 0, 0, time.UTC)
+	newerCreatedAt := time.Date(2026, 6, 2, 11, 0, 0, 0, time.UTC)
+	for _, state := range []RunState{
+		{RunID: "older", LabPath: repoRoot + "/labs/older", CreatedAt: olderCreatedAt},
+		{RunID: "newer", LabPath: repoRoot + "/labs/newer", CreatedAt: newerCreatedAt},
+	} {
+		if err := SaveState(stateDir, state); err != nil {
+			t.Fatalf("SaveState returned error: %v", err)
+		}
+	}
+	runner := NewFakeRunner()
+	runner.QueueResponse([]byte("kind-local\n"), nil)
+	runner.QueueResponse([]byte(`{
+		"items": [
+			{"metadata": {"name": "lab-older-system", "labels": {"training-platform.coreeng.io/managed-by": "tpm", "training-platform.coreeng.io/lab-run-id": "older", "training-platform.coreeng.io/lab-code": "older-lab", "training-platform.coreeng.io/lab-namespace-role": "system"}}},
+			{"metadata": {"name": "lab-newer-system", "labels": {"training-platform.coreeng.io/managed-by": "tpm", "training-platform.coreeng.io/lab-run-id": "newer", "training-platform.coreeng.io/lab-code": "newer-lab", "training-platform.coreeng.io/lab-namespace-role": "system"}}}
+		]
+	}`), nil)
+
+	output, err := List(context.Background(), Options{RepoRoot: repoRoot, StateDir: stateDir, Runner: runner})
+	if err != nil {
+		t.Fatalf("List returned error: %v", err)
+	}
+
+	assertContainsInOrder(t, output, []string{
+		"CREATED",
+		"newer",
+		newerCreatedAt.Format(time.RFC3339),
+		"older",
+		olderCreatedAt.Format(time.RFC3339),
+	})
 }
 
 func TestListAlignsColumnsForUUIDRunIDs(t *testing.T) {
