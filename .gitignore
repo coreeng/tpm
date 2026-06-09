@@ -11,3 +11,6 @@ coverage.txt
 
 # tpm lab run state
 .build/
+
+# Local git worktrees
+.worktrees/

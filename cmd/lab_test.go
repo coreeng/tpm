@@ -60,6 +60,9 @@ func TestLabRunHelpShowsRuntimeFlags(t *testing.T) {
 	if strings.Contains(output, "--local-registry-node-port") {
 		t.Fatalf("lab run help contains removed local registry NodePort flag:\n%s", output)
 	}
+	if !strings.Contains(output, "default ~/.config/tpm/labs") {
+		t.Fatalf("lab run help does not describe config-dir state default:\n%s", output)
+	}
 }
 
 func TestLabRunAcceptsChartDirWithoutChartVersion(t *testing.T) {
