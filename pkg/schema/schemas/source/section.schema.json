@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/section.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/section.schema.json",
   "title": "Section",
   "description": "A learning unit within a chapter, typically containing educational content, instructions, and examples. Sections are stored in numbered directories within chapters (e.g., 01-chapter/01-section-name/). Each section directory must contain section.yaml and description.md.",
   "type": "object",

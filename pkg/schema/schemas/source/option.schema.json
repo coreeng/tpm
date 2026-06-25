@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/option.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/option.schema.json",
   "title": "Quiz Option",
   "description": "A possible answer choice for a multiple choice question. Options are defined inline in question arrays within chapter.yml files.",
   "type": "object",

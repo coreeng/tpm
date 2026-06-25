@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/question.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/question.schema.json",
   "title": "Quiz Question",
   "description": "A multiple choice question within a quiz assessment. Questions are defined inline in chapter.yml files within multipleChoiceAssessments arrays.",
   "type": "object",

@@ -22,6 +22,22 @@ func TestNewValidator(t *testing.T) {
 	}
 }
 
+func TestNewValidatorForKindLoadsBuiltSchemas(t *testing.T) {
+	validator, err := NewValidatorForKind(BuiltSchemas, "")
+	if err != nil {
+		t.Fatalf("Failed to create built schema validator: %v", err)
+	}
+
+	schema, err := validator.LoadSchema("module.schema.json")
+	if err != nil {
+		t.Fatalf("Failed to load built module schema: %v", err)
+	}
+
+	if schema == nil {
+		t.Fatal("Expected non-nil schema")
+	}
+}
+
 func TestLoadSchema(t *testing.T) {
 	schemaDir := ""
 

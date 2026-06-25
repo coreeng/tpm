@@ -1,0 +1,490 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/built/module.schema.json",
+  "title": "Module (Built)",
+  "description": "Compiled training module artifact produced by 'tpm build'. This schema includes all source fields plus build-generated fields (index, description, successMessage) and the complete nested hierarchy of chapters, sections, assessments, and challenges.",
+  "type": "object",
+  "required": [
+    "code",
+    "title",
+    "description",
+    "shortDescription",
+    "level",
+    "bannerImage",
+    "tags",
+    "chapters"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+      "description": "Unique identifier for this module."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for the module."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Full module description merged from description.md during build. Supports markdown formatting."
+    },
+    "shortDescription": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Brief summary for module cards."
+    },
+    "level": {
+      "type": "string",
+      "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
+      "description": "Difficulty level."
+    },
+    "bannerImage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Header image URL."
+    },
+    "bannerVideo": {
+      "type": "string",
+      "description": "Introductory video URL. Optional - may be empty if the module has no video."
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Categorization tags."
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional module overview video."
+    },
+    "chapters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Chapter"
+      },
+      "description": "Array of chapters in this module."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Chapter": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description",
+        "isDraft"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Unique identifier for this chapter."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential index (1-based) assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Chapter display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Chapter description merged from description.md during build."
+        },
+        "shortDescription": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional brief summary. NOTE: Currently unused by training platform."
+        },
+        "bannerImage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional chapter banner image. NOTE: Currently unused by training platform."
+        },
+        "bannerVideo": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional chapter banner video. NOTE: Currently unused by training platform."
+        },
+        "isDraft": {
+          "type": "boolean",
+          "description": "Boolean to indicate if the chapter is a draft. Set to false for published chapters."
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional chapter introduction video."
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "description": "Array of learning sections in this chapter."
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Assessment"
+          },
+          "description": "Array of interactive assessments in this chapter."
+        },
+        "multipleChoiceAssessments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MultipleChoiceAssessment"
+          },
+          "description": "Array of quiz-based assessments."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Section": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Unique identifier for this section."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential index (1-based) within chapter, assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Section display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Section content merged from description.md during build."
+        },
+        "shortDescription": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional brief summary."
+        },
+        "estimatedDuration": {
+          "type": "string",
+          "pattern": "^[0-9]+(m|h)$",
+          "description": "Optional estimated completion time."
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional section video."
+        },
+        "thumbnail": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional thumbnail image. NOTE: Currently unused by training platform."
+        },
+        "thumbnailDescription": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional thumbnail description. NOTE: Currently unused by training platform."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Assessment": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description",
+        "starterImageUri",
+        "validatorImageUri",
+        "imageVersion",
+        "challenges"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Unique identifier for this assessment."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential index (1-based) within chapter, assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Assessment display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Assessment overview merged from description.md during build."
+        },
+        "starterImageUri": {
+          "type": "string",
+          "format": "uri",
+          "description": "OCI artifact URI for starter content tarball."
+        },
+        "validatorImageUri": {
+          "type": "string",
+          "format": "uri",
+          "description": "OCI image URI for validator service."
+        },
+        "imageVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
+          "description": "Semantic version tag for both images. Supports full semver 2.0.0 format including pre-release and build metadata."
+        },
+        "timeLimit": {
+          "type": "string",
+          "pattern": "^[0-9]+(m|h)$",
+          "description": "Optional time limit for assessment completion."
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional assessment walkthrough video."
+        },
+        "challenges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Challenge"
+          },
+          "description": "Array of challenges in this assessment."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Challenge": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description",
+        "successMessage",
+        "goals"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Semantic identifier for this challenge."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential index (1-based) within assessment, assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Challenge display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Challenge instructions merged from description.md during build."
+        },
+        "successMessage": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Congratulatory message merged from successMessage.md during build."
+        },
+        "estimatedDuration": {
+          "type": "string",
+          "pattern": "^[0-9]+(m|h)$",
+          "description": "Optional estimated completion time."
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional challenge guidance video."
+        },
+        "goals": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Goal"
+          },
+          "description": "Array of validation goals for this challenge."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Semantic identifier for this goal."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sequential index (0-based) within goals array, assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Goal display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Goal completion criteria."
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultipleChoiceAssessment": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "title",
+        "description",
+        "passingScore",
+        "questions"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Unique identifier for this quiz."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sequential index (0-based) within multipleChoiceAssessments array, assigned during build."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quiz display name."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quiz overview (inline in YAML, not from .md file)."
+        },
+        "passingScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum percentage to pass."
+        },
+        "video": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional quiz guidance video."
+        },
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Question"
+          },
+          "description": "Array of questions."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Question": {
+      "type": "object",
+      "required": [
+        "code",
+        "index",
+        "question",
+        "type",
+        "options"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$",
+          "description": "Unique identifier for this question."
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sequential index (0-based) within questions array, assigned during build."
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Question text."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["SINGLE", "MULTIPLE"],
+          "description": "SINGLE (one answer) or MULTIPLE (multiple answers)."
+        },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/Option"
+          },
+          "description": "Array of answer choices."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Option": {
+      "type": "object",
+      "required": [
+        "index",
+        "text",
+        "correct"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sequential index (0-based) within options array, assigned during build."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Option text."
+        },
+        "correct": {
+          "type": "boolean",
+          "description": "Whether this is a correct answer."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

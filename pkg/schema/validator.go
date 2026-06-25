@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -16,49 +17,86 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// embeddedSchemas holds the canonical source schemas baked into the tpm binary
-// so the CLI is self-contained and works without the schemas living alongside
-// it on disk (e.g. when installed via Homebrew). Callers can still override
-// them by passing an explicit schema directory.
+// SchemaKind selects one of the schema sets owned and embedded by tpm.
+type SchemaKind string
+
+const (
+	SourceSchemas SchemaKind = "source"
+	BuiltSchemas  SchemaKind = "built"
+)
+
+// embeddedSchemas holds the canonical schemas baked into the tpm binary so the
+// CLI is self-contained and works without schemas living alongside it on disk
+// (e.g. when installed via Homebrew). Callers can still override them by
+// passing an explicit schema directory.
 //
-//go:embed schemas/source/*.json
+//go:embed schemas/source/*.json schemas/built/*.json
 var embeddedSchemas embed.FS
 
 var (
-	embeddedDirOnce sync.Once
-	embeddedDirPath string
-	embeddedDirErr  error
+	embeddedDirsMu sync.Mutex
+	embeddedDirs   = map[SchemaKind]string{}
 )
 
+func schemaSubdir(kind SchemaKind) (string, error) {
+	switch kind {
+	case SourceSchemas, BuiltSchemas:
+		return "schemas/" + string(kind), nil
+	default:
+		return "", fmt.Errorf("unknown schema kind %q", kind)
+	}
+}
+
 // EmbeddedSchemaDir materializes the embedded source schemas into a temporary
-// directory (once per process) and returns its path. This lets the rest of the
-// validator reuse its on-disk loading logic unchanged.
+// directory. It is kept for callers that predate explicit schema kinds.
 func EmbeddedSchemaDir() (string, error) {
-	embeddedDirOnce.Do(func() {
-		dir, err := os.MkdirTemp("", "tpm-schemas-")
+	return EmbeddedSchemaDirForKind(SourceSchemas)
+}
+
+// EmbeddedSchemaDirForKind materializes the embedded schemas into a temporary
+// directory (once per schema kind per process) and returns its path. This lets
+// the rest of the validator reuse its on-disk loading logic unchanged.
+func EmbeddedSchemaDirForKind(kind SchemaKind) (string, error) {
+	embeddedDirsMu.Lock()
+	defer embeddedDirsMu.Unlock()
+
+	if dir := embeddedDirs[kind]; dir != "" {
+		return dir, nil
+	}
+
+	subdir, err := schemaSubdir(kind)
+	if err != nil {
+		return "", err
+	}
+
+	dir, err := os.MkdirTemp("", "tpm-"+string(kind)+"-schemas-")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp schema dir: %w", err)
+	}
+
+	if err := copyEmbeddedSchemas(subdir, dir); err != nil {
+		return "", err
+	}
+
+	embeddedDirs[kind] = dir
+	return dir, nil
+}
+
+func copyEmbeddedSchemas(subdir, targetDir string) error {
+	entries, err := fs.ReadDir(embeddedSchemas, subdir)
+	if err != nil {
+		return fmt.Errorf("failed to read embedded schemas: %w", err)
+	}
+	for _, entry := range entries {
+		data, err := embeddedSchemas.ReadFile(subdir + "/" + entry.Name())
 		if err != nil {
-			embeddedDirErr = fmt.Errorf("failed to create temp schema dir: %w", err)
-			return
+			return fmt.Errorf("failed to read embedded schema %s: %w", entry.Name(), err)
 		}
-		entries, err := fs.ReadDir(embeddedSchemas, "schemas/source")
-		if err != nil {
-			embeddedDirErr = fmt.Errorf("failed to read embedded schemas: %w", err)
-			return
+		if err := os.WriteFile(filepath.Join(targetDir, entry.Name()), data, 0o644); err != nil {
+			return fmt.Errorf("failed to write embedded schema %s: %w", entry.Name(), err)
 		}
-		for _, entry := range entries {
-			data, err := embeddedSchemas.ReadFile("schemas/source/" + entry.Name())
-			if err != nil {
-				embeddedDirErr = fmt.Errorf("failed to read embedded schema %s: %w", entry.Name(), err)
-				return
-			}
-			if err := os.WriteFile(filepath.Join(dir, entry.Name()), data, 0o644); err != nil {
-				embeddedDirErr = fmt.Errorf("failed to write embedded schema %s: %w", entry.Name(), err)
-				return
-			}
-		}
-		embeddedDirPath = dir
-	})
-	return embeddedDirPath, embeddedDirErr
+	}
+	return nil
 }
 
 // Validator handles JSON schema validation for module files
@@ -75,11 +113,18 @@ type ValidationError struct {
 	Message string // Error message
 }
 
-// NewValidator creates a new schema validator. When schemaDir is empty the
-// schemas embedded in the tpm binary are used, so the CLI works standalone.
+// NewValidator creates a new source schema validator. When schemaDir is empty
+// the source schemas embedded in the tpm binary are used, so the CLI works
+// standalone.
 func NewValidator(schemaDir string) (*Validator, error) {
+	return NewValidatorForKind(SourceSchemas, schemaDir)
+}
+
+// NewValidatorForKind creates a validator for the requested schema kind. When
+// schemaDir is empty, the matching schemas embedded in the tpm binary are used.
+func NewValidatorForKind(kind SchemaKind, schemaDir string) (*Validator, error) {
 	if schemaDir == "" {
-		dir, err := EmbeddedSchemaDir()
+		dir, err := EmbeddedSchemaDirForKind(kind)
 		if err != nil {
 			return nil, err
 		}
@@ -99,37 +144,8 @@ func NewValidator(schemaDir string) (*Validator, error) {
 	compiler := jsonschema.NewCompiler()
 	compiler.Draft = jsonschema.Draft2020
 
-	// Pre-register all local schema files with their GitHub URLs
-	// This prevents 404 errors when schemas reference each other via GitHub URLs
-	schemaFiles := []string{
-		"module.schema.json",
-		"chapter.schema.json",
-		"section.schema.json",
-		"assessment.schema.json",
-		"challenge.schema.json",
-		"goal.schema.json",
-		"multiple-choice-assessment.schema.json",
-		"question.schema.json",
-		"option.schema.json",
-	}
-
-	const githubPrefix = "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/"
-
-	for _, filename := range schemaFiles {
-		localPath := filepath.Join(absPath, filename)
-		data, err := os.ReadFile(localPath)
-		if err != nil {
-			// Skip missing files
-			continue
-		}
-
-		// Create a ReadCloser from the bytes
-		reader := io.NopCloser(bytes.NewReader(data))
-		githubURL := githubPrefix + filename
-
-		if err := compiler.AddResource(githubURL, reader); err != nil {
-			return nil, fmt.Errorf("failed to register schema %s: %w", filename, err)
-		}
+	if err := registerSchemaResources(compiler, kind, absPath); err != nil {
+		return nil, err
 	}
 
 	return &Validator{
@@ -137,6 +153,41 @@ func NewValidator(schemaDir string) (*Validator, error) {
 		compiler:  compiler,
 		schemas:   make(map[string]*jsonschema.Schema),
 	}, nil
+}
+
+func registerSchemaResources(compiler *jsonschema.Compiler, kind SchemaKind, schemaDir string) error {
+	entries, err := os.ReadDir(schemaDir)
+	if err != nil {
+		return fmt.Errorf("failed to read schema directory %s: %w", schemaDir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+
+		localPath := filepath.Join(schemaDir, entry.Name())
+		data, err := os.ReadFile(localPath)
+		if err != nil {
+			return fmt.Errorf("failed to read schema %s: %w", entry.Name(), err)
+		}
+
+		for _, url := range schemaResourceURLs(kind, entry.Name()) {
+			reader := io.NopCloser(bytes.NewReader(data))
+			if err := compiler.AddResource(url, reader); err != nil {
+				return fmt.Errorf("failed to register schema %s as %s: %w", entry.Name(), url, err)
+			}
+		}
+	}
+	return nil
+}
+
+func schemaResourceURLs(kind SchemaKind, filename string) []string {
+	kindPath := string(kind)
+	return []string{
+		fmt.Sprintf("https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/%s/%s", kindPath, filename),
+		fmt.Sprintf("https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/%s/%s", kindPath, filename),
+	}
 }
 
 // LoadSchema loads a JSON schema from the schema directory

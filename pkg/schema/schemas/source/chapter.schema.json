@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/chapter.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/chapter.schema.json",
   "title": "Chapter",
   "description": "A major section of a module, containing sections, interactive assessments, and/or multiple choice assessments (quizzes). Chapters are stored in numbered directories within the module/ folder (e.g., module/01-chapter-name/). Each chapter directory must contain chapter.yml and description.md.",
   "type": "object",

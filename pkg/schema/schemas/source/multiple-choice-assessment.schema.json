@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/multiple-choice-assessment.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/multiple-choice-assessment.schema.json",
   "title": "Multiple Choice Assessment",
   "description": "A quiz-based assessment with multiple choice questions. These are defined inline in chapter.yml files within the multipleChoiceAssessments array. Unlike interactive assessments, multiple choice assessments have their description field inline in YAML (no separate description.md file).",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/module.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/module.schema.json",
   "title": "Module (Source)",
   "description": "Root configuration for a training module as it exists on disk (module/module.yaml). This schema validates the source file only - it does not include the full nested hierarchy of chapters, sections, and assessments. The module directory must contain module.yaml and description.md.",
   "type": "object",
