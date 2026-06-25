@@ -3,12 +3,11 @@ package builder
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/coreeng/tpm/pkg/artifact"
 	"github.com/coreeng/tpm/pkg/module"
 	"github.com/coreeng/tpm/pkg/pathutil"
-	"github.com/coreeng/tpm/pkg/schema"
 	"github.com/coreeng/tpm/pkg/validator"
 )
 
@@ -29,14 +28,9 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 	}
 	fmt.Printf("  ✓ Loaded module: %s\n", mod.Title)
 
-	// 2. Run full validation FIRST (with schema validation enabled if schemas exist)
+	// 2. Run full validation FIRST using tpm-owned embedded schemas.
 	fmt.Println("\nValidating module...")
-	schemaDir := filepath.Join(rootDir, "schemas", "source")
-	// Check if schema directory exists (may not exist in test environments)
-	if _, err := os.Stat(schemaDir); os.IsNotExist(err) {
-		schemaDir = "" // Skip schema validation if schemas don't exist
-	}
-	validationResult := validator.ValidateModule(mod, moduleName, schemaDir)
+	validationResult := validator.ValidateModule(mod, moduleName, "")
 
 	// Print ALL validation output
 	if validationResult.HasErrors() || validationResult.WarningCount() > 0 {
@@ -99,23 +93,19 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 	assignIndices(mod)
 	fmt.Println("  ✓ Indices assigned")
 
-	// 5. Validate built module against built schema
+	// 5. Validate built module against the built schema embedded in tpm.
 	fmt.Println("\nValidating built module...")
-	builtSchemaDir := filepath.Join(rootDir, "schemas", "built")
-	if _, err := os.Stat(builtSchemaDir); err == nil {
-		// Built schema exists, validate against it
-		builtValidationResult := validateBuiltModule(mod, builtSchemaDir)
-		if builtValidationResult.HasErrors() {
-			fmt.Println("\n❌ Built module validation errors:")
-			for _, issue := range builtValidationResult.Issues {
-				if issue.Level == validator.ErrorLevel {
-					fmt.Printf("  ✗ %s: %s\n", issue.Field, issue.Message)
-				}
+	builtValidationResult := validateBuiltModule(mod)
+	if builtValidationResult.HasErrors() {
+		fmt.Println("\n❌ Built module validation errors:")
+		for _, issue := range builtValidationResult.Issues {
+			if issue.Level == validator.ErrorLevel {
+				fmt.Printf("  ✗ %s: %s\n", issue.Field, issue.Message)
 			}
-			return fmt.Errorf("built module validation failed with %d error(s)", builtValidationResult.ErrorCount())
 		}
-		fmt.Println("  ✓ Built module validation passed")
+		return fmt.Errorf("built module validation failed with %d error(s)", builtValidationResult.ErrorCount())
 	}
+	fmt.Println("  ✓ Built module validation passed")
 
 	// 6. Write output
 	fmt.Printf("\nWriting output to %s...\n", outdir)
@@ -127,30 +117,25 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 	return nil
 }
 
-// validateBuiltModule validates the built module against the built schema
-func validateBuiltModule(mod *module.Module, schemaDir string) *validator.ValidationResult {
+// validateBuiltModule validates the built module against the built schema.
+func validateBuiltModule(mod *module.Module) *validator.ValidationResult {
 	result := &validator.ValidationResult{}
-
-	// Create schema validator
-	schemaValidator, err := schema.NewValidator(schemaDir)
+	outDir, err := os.MkdirTemp("", "tpm-built-module-")
 	if err != nil {
-		result.AddError("", "schema", fmt.Sprintf("failed to initialize schema validator: %v", err))
+		result.AddError("", "schema", fmt.Sprintf("failed to create temp output directory: %v", err))
 		return result
 	}
-
-	// Validate against built module schema
-	errors, err := schemaValidator.ValidateStruct(mod, "module.schema.json")
-	if err != nil {
-		result.AddError("", "schema", fmt.Sprintf("schema validation error: %v", err))
+	defer os.RemoveAll(outDir)
+	if err := writeModule(mod, outDir); err != nil {
+		result.AddError("", "schema", fmt.Sprintf("failed to write temp built module: %v", err))
 		return result
 	}
-
-	// Add any schema errors to result
-	for _, schemaErr := range errors {
-		result.AddError("built module", schemaErr.Field, schemaErr.Message)
+	artifactResult, err := artifact.ValidateModuleArtifact(outDir, "")
+	if err != nil {
+		result.AddError("", "schema", err.Error())
+		return result
 	}
-
-	return result
+	return artifactResult
 }
 
 // applyAssessmentOverrides applies registry and version overrides to all assessments in the module

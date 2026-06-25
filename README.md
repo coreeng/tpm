@@ -49,18 +49,20 @@ Common commands:
 
 ```bash
 tpm list                            # List all modules
-tpm validate                        # Validate all modules (uses embedded schemas)
-tpm validate-changes <old> <new>    # Check for removed codes between two git refs
+tpm validate                        # Validate all modules (uses embedded source schemas)
+tpm validate-changes <old> <new>    # Check for breaking code changes between git refs
 tpm generate-codes                  # Generate missing UUID codes
 tpm generate-markdown               # Generate missing markdown files
 tpm build <module> -o <dir>         # Build a module into a unified module.yaml
+tpm validate-artifact <dir>         # Validate a compiled module.yaml artifact
 tpm init lab <path>                 # Scaffold a new lab
 tpm lab ...                         # Run and inspect local labs
 ```
 
-The JSON schemas used by `tpm validate` are **embedded in the binary**, so validation
-works anywhere with no external files required. To validate against a different set of
-schemas, pass `--schema-dir <path>`.
+The JSON schemas used by `tpm validate`, `tpm build`, and `tpm validate-artifact`
+are **embedded in the binary**, so validation works anywhere with no external files
+required. To validate against a different schema set while developing `tpm`, pass
+`--schema-dir <path>`.
 
 ## Authoring labs with an AI assistant
 

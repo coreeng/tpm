@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/challenge.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/challenge.schema.json",
   "title": "Challenge",
   "description": "A specific task within an interactive assessment with discrete validation goals. Challenges are stored in numbered directories within assessments (e.g., assessments/01-assessment-name/01-challenge-name/). Each challenge directory must contain: challenge.yaml, description.md, and successMessage.md.",
   "type": "object",

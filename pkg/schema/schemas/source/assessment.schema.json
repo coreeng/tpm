@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coreeng/training-platform-modules/main/p2p_assessments/schemas/source/assessment.schema.json",
+  "$id": "https://raw.githubusercontent.com/coreeng/tpm/main/pkg/schema/schemas/source/assessment.schema.json",
   "title": "Interactive Assessment",
   "description": "An interactive, hands-on assessment with multiple challenges. Assessments are stored in numbered directories within chapter assessments/ folders (e.g., 01-chapter/assessments/01-assessment-name/). The assessment directory must contain assessment.yaml, description.md, and subdirectories for each challenge. The assessment metadata references OCI artifacts (starter tarball and validator image) that implement the runtime behavior.",
   "type": "object",
