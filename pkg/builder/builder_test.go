@@ -14,21 +14,22 @@ func TestBuild_SimpleModule(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Run build - use path relative to repo root
-	// The test module is in pkg/builder/testdata/simple-module
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	result, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Verify output file exists
-	outFile := filepath.Join(outDir, "module.yaml")
+	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	if result.OutputFile != outFile {
+		t.Fatalf("OutputFile = %s, want %s", result.OutputFile, outFile)
+	}
 	if _, err := os.Stat(outFile); os.IsNotExist(err) {
 		t.Fatalf("Output file not created: %s", outFile)
 	}
 
 	// Load and verify the output
-	var mod module.Module
+	var mod module.BuiltModule
 	data, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
@@ -128,16 +129,14 @@ func TestBuild_IsDraftPreserved(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Run build - use path relative to repo root
-	// The test module is in pkg/builder/testdata/simple-module
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	_, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Load and verify the output
-	var mod module.Module
-	data, err := os.ReadFile(filepath.Join(outDir, "module.yaml"))
+	var mod module.BuiltModule
+	data, err := os.ReadFile(filepath.Join(outDir, "simple-module", "module.yaml"))
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}

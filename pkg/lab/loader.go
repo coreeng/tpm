@@ -46,6 +46,9 @@ func loadModuleBacked(metadataRoot, runtimePath string) (*Lab, error) {
 	if err := loadYAML(metadataPath, &loaded); err != nil {
 		return nil, err
 	}
+	if description, err := readOptionalText(filepath.Join(metadataRoot, "description.md")); err == nil {
+		loaded.Description = description
+	}
 	challenges, err := loadChallenges(metadataRoot)
 	if err != nil {
 		return nil, err
@@ -111,6 +114,13 @@ func loadChallenges(metadataRoot string) ([]Challenge, error) {
 		if err := loadYAML(challengePath, &challenge); err != nil {
 			return nil, err
 		}
+		challengeRoot := filepath.Dir(challengePath)
+		if description, err := readOptionalText(filepath.Join(challengeRoot, "description.md")); err == nil {
+			challenge.Description = description
+		}
+		if successMessage, err := readOptionalText(filepath.Join(challengeRoot, "successMessage.md")); err == nil {
+			challenge.SuccessMessage = successMessage
+		}
 		loaded = append(loaded, loadedChallenge{dirName: entry.Name(), challenge: challenge})
 	}
 	sort.Slice(loaded, func(i, j int) bool {
@@ -140,6 +150,14 @@ func loadYAML(path string, into any) error {
 		return err
 	}
 	return yaml.Unmarshal(contents, into)
+}
+
+func readOptionalText(path string) (string, error) {
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(contents), nil
 }
 
 func fileExists(path string) bool {

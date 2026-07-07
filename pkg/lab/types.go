@@ -14,6 +14,7 @@ type Lab struct {
 	MetadataPath  string      `yaml:"-"`
 	Title         string      `yaml:"title"`
 	Code          string      `yaml:"code"`
+	Description   string      `yaml:"description"`
 	TimeLimit     string      `yaml:"timeLimit"`
 	StarterPath   string      `yaml:"-"`
 	SolutionPath  string      `yaml:"-"`
@@ -22,12 +23,15 @@ type Lab struct {
 }
 
 type Challenge struct {
-	Code  string `yaml:"code"`
-	Title string `yaml:"title"`
-	Goals []Goal `yaml:"goals"`
+	Code           string `yaml:"code"`
+	Title          string `yaml:"title"`
+	Description    string `yaml:"description"`
+	SuccessMessage string `yaml:"successMessage"`
+	Goals          []Goal `yaml:"goals"`
 }
 
 type Goal struct {
-	Code  string `yaml:"code"`
-	Title string `yaml:"title"`
+	Code        string `yaml:"code"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
 }

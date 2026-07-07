@@ -18,14 +18,13 @@ func TestBuildModule_Baseline(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Build the module - use path relative to repo root
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	_, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "module.yaml")
+	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
 	actualBytes, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
@@ -77,21 +76,20 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Build the module - use path relative to repo root
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	_, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "module.yaml")
+	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
 	data, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
 
 	// Parse the module
-	var mod module.Module
+	var mod module.BuiltModule
 	if err := yaml.Unmarshal(data, &mod); err != nil {
 		t.Fatalf("Failed to unmarshal output YAML: %v", err)
 	}

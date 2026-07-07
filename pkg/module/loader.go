@@ -14,7 +14,10 @@ import (
 func LoadModule(rootDir, moduleName string) (*Module, error) {
 	modulePath := GetModulePath(rootDir, moduleName)
 	moduleFilePath := GetModuleFilePath(rootDir, moduleName)
+	return loadModuleFromSourcePath(modulePath, moduleFilePath)
+}
 
+func loadModuleFromSourcePath(modulePath, moduleFilePath string) (*Module, error) {
 	// Check if module file exists
 	if !pathutil.FileExists(moduleFilePath) {
 		return nil, fmt.Errorf("module file not found at %s", moduleFilePath)

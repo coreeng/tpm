@@ -20,12 +20,25 @@ type GenerateResult struct {
 // GenerateMissingCodes generates UUIDs for any entities that are missing a code field
 // This function ONLY adds codes where they are missing - it never replaces existing codes
 func GenerateMissingCodes(rootDir, moduleName string) (*GenerateResult, error) {
+	return generateMissingCodesFromModule(func() (*module.Module, error) {
+		return module.LoadModule(rootDir, moduleName)
+	})
+}
+
+func GenerateMissingCodesPath(modulePath string) (*GenerateResult, error) {
+	return generateMissingCodesFromModule(func() (*module.Module, error) {
+		mod, _, err := module.LoadPath(modulePath)
+		return mod, err
+	})
+}
+
+func generateMissingCodesFromModule(load func() (*module.Module, error)) (*GenerateResult, error) {
 	result := &GenerateResult{
 		FilesModified: make([]string, 0),
 	}
 
 	// Load the module
-	mod, err := module.LoadModule(rootDir, moduleName)
+	mod, err := load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load module: %w", err)
 	}

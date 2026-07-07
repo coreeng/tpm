@@ -4,7 +4,7 @@ package module
 type Module struct {
 	Code             string    `yaml:"code" json:"code"`
 	Title            string    `yaml:"title" json:"title"`
-	Description      string    `yaml:"description" json:"description"`
+	Description      string    `yaml:"-" json:"-"`
 	ShortDescription string    `yaml:"shortDescription" json:"shortDescription"`
 	BannerImage      string    `yaml:"bannerImage,omitempty" json:"bannerImage,omitempty"`
 	BannerVideo      string    `yaml:"bannerVideo,omitempty" json:"bannerVideo,omitempty"`
@@ -17,9 +17,9 @@ type Module struct {
 // Chapter represents a chapter within a module
 type Chapter struct {
 	Code                      string                     `yaml:"code" json:"code"`
-	Index                     int                        `yaml:"index" json:"index"`
+	Index                     int                        `yaml:"-" json:"-"`
 	Title                     string                     `yaml:"title" json:"title"`
-	Description               string                     `yaml:"description" json:"description"`
+	Description               string                     `yaml:"-" json:"-"`
 	ShortDescription          string                     `yaml:"shortDescription" json:"shortDescription,omitempty"`
 	BannerImage               string                     `yaml:"bannerImage" json:"bannerImage,omitempty"`
 	BannerVideo               string                     `yaml:"bannerVideo" json:"bannerVideo,omitempty"`
@@ -33,9 +33,9 @@ type Chapter struct {
 // Section represents a learning section within a chapter
 type Section struct {
 	Code                 string `yaml:"code" json:"code"`
-	Index                int    `yaml:"index" json:"index"`
+	Index                int    `yaml:"-" json:"-"`
 	Title                string `yaml:"title" json:"title"`
-	Description          string `yaml:"description" json:"description"`
+	Description          string `yaml:"-" json:"-"`
 	ShortDescription     string `yaml:"shortDescription" json:"shortDescription,omitempty"`
 	ThumbnailDescription string `yaml:"thumbnailDescription,omitempty" json:"thumbnailDescription,omitempty"`
 	Thumbnail            string `yaml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
@@ -47,9 +47,9 @@ type Section struct {
 // Assessment represents an interactive assessment
 type Assessment struct {
 	Code              string      `yaml:"code" json:"code"`
-	Index             int         `yaml:"index" json:"index"`
+	Index             int         `yaml:"-" json:"-"`
 	Title             string      `yaml:"title" json:"title"`
-	Description       string      `yaml:"description" json:"description"`
+	Description       string      `yaml:"-" json:"-"`
 	TimeLimit         string      `yaml:"timeLimit" json:"timeLimit,omitempty"`
 	StarterImageURI   string      `yaml:"starterImageUri" json:"starterImageUri"`
 	ValidatorImageURI string      `yaml:"validatorImageUri" json:"validatorImageUri"`
@@ -62,10 +62,10 @@ type Assessment struct {
 // Challenge represents a challenge within an assessment
 type Challenge struct {
 	Code              string `yaml:"code" json:"code"`
-	Index             int    `yaml:"index" json:"index"`
+	Index             int    `yaml:"-" json:"-"`
 	Title             string `yaml:"title" json:"title"`
-	Description       string `yaml:"description" json:"description"`
-	SuccessMessage    string `yaml:"successMessage" json:"successMessage"`
+	Description       string `yaml:"-" json:"-"`
+	SuccessMessage    string `yaml:"-" json:"-"`
 	EstimatedDuration string `yaml:"estimatedDuration" json:"estimatedDuration,omitempty"`
 	Video             string `yaml:"video" json:"video,omitempty"`
 	Goals             []Goal `yaml:"goals" json:"goals"`
@@ -75,7 +75,7 @@ type Challenge struct {
 // Goal represents a goal within a challenge
 type Goal struct {
 	Code        string `yaml:"code" json:"code"`
-	Index       int    `yaml:"index" json:"index"`
+	Index       int    `yaml:"-" json:"-"`
 	Title       string `yaml:"title" json:"title"`
 	Description string `yaml:"description" json:"description"`
 }

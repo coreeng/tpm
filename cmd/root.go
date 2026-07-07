@@ -16,8 +16,7 @@ var rootCmd = &cobra.Command{
 	Short: "Training Platform Module CLI",
 	Long: `tpm is a command-line tool for authoring and managing Training Platform modules and labs.
 
-It provides commands to scaffold, list, validate, build, and run training
-modules and labs from your local module repository.`,
+It provides grouped commands for modules, compiled artifacts, and local labs.`,
 	Version: version,
 }
 
@@ -30,12 +29,7 @@ func Execute() {
 }
 
 func init() {
-	// Add subcommands
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(validateChangesCmd)
-	rootCmd.AddCommand(generateCodesCmd)
-	rootCmd.AddCommand(generateMarkdownCmd)
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(newModuleCmd())
+	rootCmd.AddCommand(newArtifactCmd())
 	rootCmd.AddCommand(labCmd)
 }

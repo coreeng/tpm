@@ -3,34 +3,49 @@ package builder
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/coreeng/tpm/pkg/artifact"
 	"github.com/coreeng/tpm/pkg/module"
-	"github.com/coreeng/tpm/pkg/pathutil"
 	"github.com/coreeng/tpm/pkg/validator"
 )
 
+type BuildResult struct {
+	ModuleName string
+	OutputDir  string
+	OutputFile string
+}
+
 // Build compiles a module from source into a single unified module.yaml artifact
 // It validates that all codes exist, merges descriptions, assigns indices, and writes output
-func Build(moduleName, outdir, registryOverride, versionOverride string) error {
-	// Get repository root using shared utility
-	rootDir, err := pathutil.GetRepoRoot()
+func Build(modulePath, outRoot, registryOverride, versionOverride string) (*BuildResult, error) {
+	mod, resolved, built, err := Compile(modulePath, registryOverride, versionOverride)
 	if err != nil {
-		return fmt.Errorf("failed to determine repository root: %w", err)
+		return nil, err
 	}
 
-	// 1. Load module using existing loader
-	fmt.Printf("Loading module '%s'...\n", moduleName)
-	mod, err := module.LoadModule(rootDir, moduleName)
-	if err != nil {
-		return fmt.Errorf("failed to load module: %w", err)
+	outDir := filepath.Join(outRoot, resolved.Name)
+	fmt.Printf("\nWriting output to %s...\n", outDir)
+	if err := writeModule(built, outDir); err != nil {
+		return nil, fmt.Errorf("failed to write module: %w", err)
 	}
-	fmt.Printf("  ✓ Loaded module: %s\n", mod.Title)
 
-	// 2. Run full validation FIRST using tpm-owned embedded schemas.
+	outputFile := filepath.Join(outDir, "module.yaml")
+	fmt.Printf("\nBuilt module: %s -> %s\n", mod.Title, outputFile)
+	return &BuildResult{ModuleName: resolved.Name, OutputDir: outDir, OutputFile: outputFile}, nil
+}
+
+func Compile(modulePath, registryOverride, versionOverride string) (*module.Module, module.ResolvedPath, *module.BuiltModule, error) {
+	fmt.Printf("Loading module '%s'...\n", modulePath)
+	mod, resolved, err := module.LoadPath(modulePath)
+	if err != nil {
+		return nil, module.ResolvedPath{}, nil, fmt.Errorf("failed to load module: %w", err)
+	}
+	fmt.Printf("  Loaded module: %s\n", mod.Title)
+
 	fmt.Println("\nValidating module...")
-	validationResult := validator.ValidateModule(mod, moduleName, "")
+	validationResult := validator.ValidateModule(mod, resolved.Name, "")
 
 	// Print ALL validation output
 	if validationResult.HasErrors() || validationResult.WarningCount() > 0 {
@@ -53,18 +68,16 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 
 	// Fail if validation errors found
 	if validationResult.HasErrors() {
-		return fmt.Errorf("validation failed with %d error(s)\n\nHint: Fix validation errors before building", validationResult.ErrorCount())
+		return nil, module.ResolvedPath{}, nil, fmt.Errorf("validation failed with %d error(s)\n\nHint: Fix validation errors before building", validationResult.ErrorCount())
 	}
 	fmt.Println("  ✓ Module validation passed")
 
-	// 3. Merge descriptions from description.md files
 	fmt.Println("\nMerging description.md files...")
-	modulePath := module.GetModulePath(rootDir, moduleName)
-	warnings, err := MergeDescriptions(mod, modulePath)
+	warnings, err := MergeDescriptions(mod, resolved.SourcePath)
 	if err != nil {
-		return fmt.Errorf("failed to merge descriptions: %w", err)
+		return nil, module.ResolvedPath{}, nil, fmt.Errorf("failed to merge descriptions: %w", err)
 	}
-	fmt.Println("  ✓ Descriptions merged")
+	fmt.Println("  Descriptions merged")
 
 	// Display warnings for double-declared descriptions
 	if len(warnings) > 0 {
@@ -78,24 +91,23 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 	if registryOverride != "" || versionOverride != "" {
 		fmt.Println("\nApplying assessment overrides...")
 		if err := applyAssessmentOverrides(mod, registryOverride, versionOverride); err != nil {
-			return fmt.Errorf("failed to apply assessment overrides: %w", err)
+			return nil, module.ResolvedPath{}, nil, fmt.Errorf("failed to apply assessment overrides: %w", err)
 		}
 		if registryOverride != "" {
-			fmt.Printf("  ✓ Registry override applied: %s\n", registryOverride)
+			fmt.Printf("  Registry override applied: %s\n", registryOverride)
 		}
 		if versionOverride != "" {
-			fmt.Printf("  ✓ Version override applied: %s\n", versionOverride)
+			fmt.Printf("  Version override applied: %s\n", versionOverride)
 		}
 	}
 
-	// 4. Assign sequential indices
 	fmt.Println("\nAssigning indices...")
 	assignIndices(mod)
-	fmt.Println("  ✓ Indices assigned")
+	fmt.Println("  Indices assigned")
+	built := toBuiltModule(mod)
 
-	// 5. Validate built module against the built schema embedded in tpm.
 	fmt.Println("\nValidating built module...")
-	builtValidationResult := validateBuiltModule(mod)
+	builtValidationResult := validateBuiltModule(built)
 	if builtValidationResult.HasErrors() {
 		fmt.Println("\n❌ Built module validation errors:")
 		for _, issue := range builtValidationResult.Issues {
@@ -103,22 +115,15 @@ func Build(moduleName, outdir, registryOverride, versionOverride string) error {
 				fmt.Printf("  ✗ %s: %s\n", issue.Field, issue.Message)
 			}
 		}
-		return fmt.Errorf("built module validation failed with %d error(s)", builtValidationResult.ErrorCount())
+		return nil, module.ResolvedPath{}, nil, fmt.Errorf("built module validation failed with %d error(s)", builtValidationResult.ErrorCount())
 	}
-	fmt.Println("  ✓ Built module validation passed")
+	fmt.Println("  Built module validation passed")
 
-	// 6. Write output
-	fmt.Printf("\nWriting output to %s...\n", outdir)
-	if err := writeModule(mod, outdir); err != nil {
-		return fmt.Errorf("failed to write module: %w", err)
-	}
-
-	fmt.Printf("\n✅ Built module: %s → %s/module.yaml\n", mod.Title, outdir)
-	return nil
+	return mod, resolved, built, nil
 }
 
 // validateBuiltModule validates the built module against the built schema.
-func validateBuiltModule(mod *module.Module) *validator.ValidationResult {
+func validateBuiltModule(mod *module.BuiltModule) *validator.ValidationResult {
 	result := &validator.ValidationResult{}
 	outDir, err := os.MkdirTemp("", "tpm-built-module-")
 	if err != nil {
