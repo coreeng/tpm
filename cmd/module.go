@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/coreeng/tpm/pkg/authoring"
 	"github.com/coreeng/tpm/pkg/builder"
 	"github.com/coreeng/tpm/pkg/codegen"
 	"github.com/coreeng/tpm/pkg/compare"
@@ -33,6 +34,10 @@ func newModuleCmd() *cobra.Command {
 	cmd.AddCommand(newModuleBuildCmd())
 	cmd.AddCommand(newModuleGenerateCmd())
 	cmd.AddCommand(newModuleCompareCmd())
+	cmd.AddCommand(newModuleAddCmd())
+	cmd.AddCommand(newModuleEditCmd())
+	cmd.AddCommand(newModuleMoveCmd())
+	cmd.AddCommand(newModuleRemoveCmd())
 	return cmd
 }
 
@@ -328,5 +333,162 @@ func writeCompareReport(cmd *cobra.Command, report *compare.Report, policy compa
 	}
 	for _, info := range report.Added {
 		fmt.Fprintf(out, "  added %s (%s): %s\n", info.Code, info.EntityType, info.FilePath)
+	}
+}
+
+type moduleAuthoringOptions struct {
+	authoring.Options
+	allowBreaking bool
+}
+
+func newModuleAddCmd() *cobra.Command {
+	opts := &moduleAuthoringOptions{}
+	cmd := &cobra.Command{
+		Use:   "add <type> <module-path>",
+		Short: "Add a YAML-backed module resource at an explicit index",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := authoring.Add(args[1], args[0], opts.Options); err != nil {
+				return err
+			}
+			_, err := fmt.Fprintf(cmd.OutOrStdout(), "added %s\n", args[0])
+			return err
+		},
+	}
+	addAuthoringIndexFlags(cmd, opts)
+	cmd.Flags().IntVar(&opts.At, "at", 0, "1-based insertion index")
+	cmd.Flags().StringArrayVar(&opts.Sets, "set", nil, "YAML field assignment as field=value")
+	if err := cmd.MarkFlagRequired("at"); err != nil {
+		panic(fmt.Sprintf("failed to mark at flag as required: %v", err))
+	}
+	return cmd
+}
+
+func newModuleEditCmd() *cobra.Command {
+	opts := &moduleAuthoringOptions{Options: authoring.Options{BreakingPolicy: authoring.BreakingPolicyError}}
+	cmd := &cobra.Command{
+		Use:   "edit <type> <module-path>",
+		Short: "Edit YAML fields on a module resource",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.allowBreaking {
+				opts.BreakingPolicy = authoring.BreakingPolicyWarn
+			}
+			if err := validateAuthoringPolicy(opts.BreakingPolicy); err != nil {
+				return err
+			}
+			if err := authoring.Edit(args[1], args[0], opts.Options); err != nil {
+				return err
+			}
+			_, err := fmt.Fprintf(cmd.OutOrStdout(), "edited %s\n", args[0])
+			return err
+		},
+	}
+	addAuthoringIndexFlags(cmd, opts)
+	addAuthoringBreakingFlags(cmd, opts)
+	cmd.Flags().StringArrayVar(&opts.Sets, "set", nil, "YAML field assignment as field=value")
+	return cmd
+}
+
+func newModuleMoveCmd() *cobra.Command {
+	opts := &moduleAuthoringOptions{}
+	cmd := &cobra.Command{
+		Use:   "move <type> <module-path>",
+		Short: "Move a module resource within its current parent",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := authoring.Move(args[1], args[0], opts.Options); err != nil {
+				return err
+			}
+			_, err := fmt.Fprintf(cmd.OutOrStdout(), "moved %s\n", args[0])
+			return err
+		},
+	}
+	addAuthoringIndexFlags(cmd, opts)
+	cmd.Flags().IntVar(&opts.From, "from", 0, "1-based source index")
+	cmd.Flags().IntVar(&opts.To, "to", 0, "1-based destination index")
+	if err := cmd.MarkFlagRequired("from"); err != nil {
+		panic(fmt.Sprintf("failed to mark from flag as required: %v", err))
+	}
+	if err := cmd.MarkFlagRequired("to"); err != nil {
+		panic(fmt.Sprintf("failed to mark to flag as required: %v", err))
+	}
+	return cmd
+}
+
+func newModuleRemoveCmd() *cobra.Command {
+	opts := &moduleAuthoringOptions{Options: authoring.Options{BreakingPolicy: authoring.BreakingPolicyError}}
+	cmd := &cobra.Command{
+		Use:   "remove <type> <module-path>",
+		Short: "Remove a module resource by explicit index",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.allowBreaking {
+				opts.BreakingPolicy = authoring.BreakingPolicyWarn
+			}
+			if err := validateAuthoringPolicy(opts.BreakingPolicy); err != nil {
+				return err
+			}
+			if err := authoring.Remove(args[1], args[0], opts.Options); err != nil {
+				return err
+			}
+			_, err := fmt.Fprintf(cmd.OutOrStdout(), "removed %s\n", args[0])
+			return err
+		},
+	}
+	addAuthoringIndexFlags(cmd, opts)
+	addAuthoringBreakingFlags(cmd, opts)
+	cmd.Flags().IntVar(&opts.From, "from", 0, "1-based resource index to remove")
+	cmd.Flags().BoolVar(&opts.Yes, "yes", false, "Confirm removal")
+	if err := cmd.MarkFlagRequired("from"); err != nil {
+		panic(fmt.Sprintf("failed to mark from flag as required: %v", err))
+	}
+	return cmd
+}
+
+func addAuthoringIndexFlags(cmd *cobra.Command, opts *moduleAuthoringOptions) {
+	cmd.Flags().IntVar(&opts.Chapter, "chapter", 0, "1-based chapter index")
+	cmd.Flags().IntVar(&opts.Section, "section", 0, "1-based section index")
+	cmd.Flags().IntVar(&opts.Lab, "lab", 0, "1-based lab index")
+	cmd.Flags().IntVar(&opts.Challenge, "challenge", 0, "1-based challenge index")
+	cmd.Flags().IntVar(&opts.Goal, "goal", 0, "1-based goal index")
+	cmd.Flags().IntVar(&opts.Quiz, "quiz", 0, "1-based quiz index")
+	cmd.Flags().IntVar(&opts.Question, "question", 0, "1-based question index")
+	cmd.Flags().IntVar(&opts.Option, "option", 0, "1-based option index")
+}
+
+func addAuthoringBreakingFlags(cmd *cobra.Command, opts *moduleAuthoringOptions) {
+	cmd.Flags().Var((*authoringPolicyValue)(&opts.BreakingPolicy), "breaking-policy", "Breaking change policy: error, warn, or ignore")
+	cmd.Flags().BoolVar(&opts.allowBreaking, "allow-breaking", false, "Alias for --breaking-policy=warn")
+}
+
+type authoringPolicyValue authoring.BreakingPolicy
+
+func (v *authoringPolicyValue) String() string {
+	if v == nil || *v == "" {
+		return string(authoring.BreakingPolicyError)
+	}
+	return string(*v)
+}
+
+func (v *authoringPolicyValue) Set(value string) error {
+	policy := authoring.BreakingPolicy(value)
+	if err := validateAuthoringPolicy(policy); err != nil {
+		return err
+	}
+	*v = authoringPolicyValue(policy)
+	return nil
+}
+
+func (v *authoringPolicyValue) Type() string {
+	return "policy"
+}
+
+func validateAuthoringPolicy(policy authoring.BreakingPolicy) error {
+	switch policy {
+	case authoring.BreakingPolicyError, authoring.BreakingPolicyWarn, authoring.BreakingPolicyIgnore:
+		return nil
+	default:
+		return fmt.Errorf("breaking-policy must be one of: error, warn, ignore")
 	}
 }

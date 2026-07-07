@@ -194,6 +194,77 @@ func TestModuleCompareBreakingPolicy(t *testing.T) {
 	}
 }
 
+func TestModuleAuthoringCommands(t *testing.T) {
+	modulePath := copyCmdFixtureModule(t)
+	output, err := executeRootCommand("module", "add", "section", modulePath, "--chapter", "1", "--at", "1", "--set", "code=new-section", "--set", "title=New Section")
+	if err != nil {
+		t.Fatalf("module add section returned error: %v\n%s", err, output)
+	}
+	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
+
+	output, err = executeRootCommand("module", "edit", "section", modulePath, "--chapter", "1", "--section", "1", "--set", "title=Edited Section")
+	if err != nil {
+		t.Fatalf("module edit section returned error: %v\n%s", err, output)
+	}
+	sectionYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(sectionYAML), "title: Edited Section") {
+		t.Fatalf("section title was not edited:\n%s", sectionYAML)
+	}
+
+	output, err = executeRootCommand("module", "move", "section", modulePath, "--chapter", "1", "--from", "2", "--to", "1")
+	if err != nil {
+		t.Fatalf("module move section returned error: %v\n%s", err, output)
+	}
+	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-section", "section.yaml"))
+
+	output, err = executeRootCommand("module", "remove", "section", modulePath, "--chapter", "1", "--from", "2", "--yes", "--breaking-policy", "warn")
+	if err != nil {
+		t.Fatalf("module remove section returned error: %v\n%s", err, output)
+	}
+}
+
+func TestModuleAuthoringInlineQuizAndLabResources(t *testing.T) {
+	modulePath := copyCmdFixtureModule(t)
+	commands := [][]string{
+		{"module", "add", "quiz", modulePath, "--chapter", "1", "--at", "1", "--set", "code=quiz-one", "--set", "title=Quiz One", "--set", "description=Quiz description", "--set", "passingScore=80"},
+		{"module", "add", "question", modulePath, "--chapter", "1", "--quiz", "1", "--at", "1", "--set", "code=question-one", "--set", "question=Pick one", "--set", "type=SINGLE"},
+		{"module", "add", "option", modulePath, "--chapter", "1", "--quiz", "1", "--question", "1", "--at", "1", "--set", "text=First", "--set", "correct=true"},
+		{"module", "add", "option", modulePath, "--chapter", "1", "--quiz", "1", "--question", "1", "--at", "2", "--set", "text=Second", "--set", "correct=false"},
+		{"module", "move", "option", modulePath, "--chapter", "1", "--quiz", "1", "--question", "1", "--from", "2", "--to", "1"},
+		{"module", "edit", "option", modulePath, "--chapter", "1", "--quiz", "1", "--question", "1", "--option", "1", "--set", "text=Edited Second"},
+		{"module", "add", "lab", modulePath, "--chapter", "1", "--at", "1", "--set", "code=lab-one", "--set", "title=Lab One", "--set", "starterImageUri=oci://example/starter", "--set", "validatorImageUri=oci://example/validator", "--set", "imageVersion=0.0.1"},
+		{"module", "add", "challenge", modulePath, "--chapter", "1", "--lab", "1", "--at", "1", "--set", "code=ChallengeOne", "--set", "title=Challenge One"},
+		{"module", "add", "goal", modulePath, "--chapter", "1", "--lab", "1", "--challenge", "1", "--at", "1", "--set", "code=GoalOne", "--set", "title=Goal One", "--set", "description=Goal description"},
+		{"module", "edit", "goal", modulePath, "--chapter", "1", "--lab", "1", "--challenge", "1", "--goal", "1", "--set", "description=Updated goal"},
+	}
+	for _, args := range commands {
+		output, err := executeRootCommand(args...)
+		if err != nil {
+			t.Fatalf("%s returned error: %v\n%s", strings.Join(args, " "), err, output)
+		}
+	}
+
+	chapterYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "chapter.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"code: quiz-one", "text: Edited Second", "passingScore: 80"} {
+		if !strings.Contains(string(chapterYAML), want) {
+			t.Fatalf("chapter YAML does not contain %q:\n%s", want, chapterYAML)
+		}
+	}
+	challengeYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "assessments", "01-lab-one", "01-challenge-one", "challenge.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(challengeYAML), "description: Updated goal") {
+		t.Fatalf("challenge YAML does not contain updated goal:\n%s", challengeYAML)
+	}
+}
+
 func executeRootCommand(args ...string) (string, error) {
 	var output bytes.Buffer
 	resetCommandFlags(rootCmd)
@@ -214,6 +285,11 @@ func executeRootCommand(args ...string) (string, error) {
 
 func resetCommandFlags(cmd *cobra.Command) {
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		if sliceValue, ok := flag.Value.(interface{ Replace([]string) error }); ok {
+			_ = sliceValue.Replace([]string{})
+			flag.Changed = false
+			return
+		}
 		flag.Changed = false
 		_ = flag.Value.Set(flag.DefValue)
 	})
