@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/coreeng/tpm/pkg/builder"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -111,6 +112,16 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 		}
 	}
 
+	output, err = executeRootCommand("lab", "preview", "--help")
+	if err != nil {
+		t.Fatalf("lab preview --help returned error: %v\n%s", err, output)
+	}
+	for _, want := range []string{"--addr", "--open", "--watch"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("lab preview help does not contain %q:\n%s", want, output)
+		}
+	}
+
 	output, err = executeRootCommand("lab", "run")
 	if err == nil {
 		t.Fatalf("lab run unexpectedly succeeded:\n%s", output)
@@ -125,6 +136,33 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unknown command") {
 		t.Fatalf("lab cleanup error does not report unknown command: %v\n%s", err, output)
+	}
+}
+
+func TestModulePreviewHelpAndTemplate(t *testing.T) {
+	output, err := executeRootCommand("module", "preview", "--help")
+	if err != nil {
+		t.Fatalf("module preview --help returned error: %v\n%s", err, output)
+	}
+	for _, want := range []string{"--addr", "--open", "--watch"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("module preview help does not contain %q:\n%s", want, output)
+		}
+	}
+
+	fixture := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
+	_, _, built, err := builder.Compile(fixture, "", "")
+	if err != nil {
+		t.Fatalf("Compile fixture returned error: %v", err)
+	}
+	var rendered bytes.Buffer
+	if err := modulePreviewTemplate.Execute(&rendered, built); err != nil {
+		t.Fatalf("module preview template returned error: %v", err)
+	}
+	for _, want := range []string{"Test Module", "Test Chapter", "Test Section"} {
+		if !strings.Contains(rendered.String(), want) {
+			t.Fatalf("module preview render does not contain %q:\n%s", want, rendered.String())
+		}
 	}
 }
 

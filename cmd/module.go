@@ -32,6 +32,7 @@ func newModuleCmd() *cobra.Command {
 	cmd.AddCommand(newModuleInitCmd())
 	cmd.AddCommand(newModuleValidateCmd())
 	cmd.AddCommand(newModuleBuildCmd())
+	cmd.AddCommand(newModulePreviewCmd())
 	cmd.AddCommand(newModuleGenerateCmd())
 	cmd.AddCommand(newModuleCompareCmd())
 	cmd.AddCommand(newModuleAddCmd())
