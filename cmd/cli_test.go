@@ -162,6 +162,38 @@ func TestLabStartValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
 	}
 }
 
+func TestModuleCompareBreakingPolicy(t *testing.T) {
+	oldPath := copyCmdFixtureModule(t)
+	newPath := copyCmdFixtureModule(t)
+	if err := os.RemoveAll(filepath.Join(newPath, "module", "01-chapter", "01-section")); err != nil {
+		t.Fatal(err)
+	}
+
+	output, err := executeRootCommand("module", "compare", oldPath, newPath)
+	if err == nil {
+		t.Fatalf("module compare unexpectedly succeeded:\n%s", output)
+	}
+	if !strings.Contains(output, "ERROR: breaking module changes detected") {
+		t.Fatalf("compare output does not report breaking error:\n%s", output)
+	}
+
+	output, err = executeRootCommand("module", "compare", oldPath, newPath, "--breaking-policy", "warn")
+	if err != nil {
+		t.Fatalf("module compare --breaking-policy warn returned error: %v\n%s", err, output)
+	}
+	if !strings.Contains(output, "WARNING: breaking module changes detected") {
+		t.Fatalf("compare output does not report warning:\n%s", output)
+	}
+
+	output, err = executeRootCommand("module", "compare", oldPath, newPath, "--allow-breaking")
+	if err != nil {
+		t.Fatalf("module compare --allow-breaking returned error: %v\n%s", err, output)
+	}
+	if !strings.Contains(output, "WARNING: breaking module changes detected") {
+		t.Fatalf("allow-breaking output does not use warning policy:\n%s", output)
+	}
+}
+
 func executeRootCommand(args ...string) (string, error) {
 	var output bytes.Buffer
 	resetCommandFlags(rootCmd)
@@ -198,5 +230,39 @@ func assertCmdFileExists(t *testing.T, path string) {
 	}
 	if info.IsDir() {
 		t.Fatalf("%s is a directory, want file", path)
+	}
+}
+
+func copyCmdFixtureModule(t *testing.T) string {
+	t.Helper()
+	src := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
+	dst := filepath.Join(t.TempDir(), "simple-module")
+	copyCmdDir(t, src, dst)
+	return dst
+}
+
+func copyCmdDir(t *testing.T, src, dst string) {
+	t.Helper()
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		if entry.IsDir() {
+			copyCmdDir(t, srcPath, dstPath)
+			continue
+		}
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/coreeng/tpm/pkg/builder"
 	"github.com/coreeng/tpm/pkg/codegen"
+	"github.com/coreeng/tpm/pkg/compare"
 	moduleinit "github.com/coreeng/tpm/pkg/init"
 	"github.com/coreeng/tpm/pkg/markdowngen"
 	"github.com/coreeng/tpm/pkg/module"
@@ -31,6 +32,7 @@ func newModuleCmd() *cobra.Command {
 	cmd.AddCommand(newModuleValidateCmd())
 	cmd.AddCommand(newModuleBuildCmd())
 	cmd.AddCommand(newModuleGenerateCmd())
+	cmd.AddCommand(newModuleCompareCmd())
 	return cmd
 }
 
@@ -259,5 +261,72 @@ func newModuleGenerateMarkdownCmd() *cobra.Command {
 			}
 			return nil
 		},
+	}
+}
+
+type moduleCompareOptions struct {
+	breakingPolicy string
+	allowBreaking  bool
+}
+
+func newModuleCompareCmd() *cobra.Command {
+	opts := &moduleCompareOptions{breakingPolicy: string(compare.BreakingPolicyError)}
+	cmd := &cobra.Command{
+		Use:   "compare <old-location> <new-location>",
+		Short: "Compare module code compatibility between paths or git refs",
+		Long: `Compare module code compatibility between two locations.
+
+Locations can be local paths or path@ref git locations. Local paths can point to
+module source directories, built artifact directories, or built module.yaml files.`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.allowBreaking {
+				opts.breakingPolicy = string(compare.BreakingPolicyWarn)
+			}
+			policy, err := compare.ValidateBreakingPolicy(opts.breakingPolicy)
+			if err != nil {
+				return err
+			}
+			report, err := compare.Compare(args[0], args[1])
+			if err != nil {
+				return err
+			}
+			writeCompareReport(cmd, report, policy)
+			if report.HasBreakingChanges() && policy == compare.BreakingPolicyError {
+				return fmt.Errorf("breaking module changes detected")
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&opts.breakingPolicy, "breaking-policy", string(compare.BreakingPolicyError), "Breaking change policy: error, warn, or ignore")
+	cmd.Flags().BoolVar(&opts.allowBreaking, "allow-breaking", false, "Alias for --breaking-policy=warn")
+	return cmd
+}
+
+func writeCompareReport(cmd *cobra.Command, report *compare.Report, policy compare.BreakingPolicy) {
+	out := cmd.OutOrStdout()
+	fmt.Fprintf(out, "old: %s (%d code(s))\n", report.OldLocation, report.OldCount)
+	fmt.Fprintf(out, "new: %s (%d code(s))\n", report.NewLocation, report.NewCount)
+	fmt.Fprintf(out, "added: %d\n", len(report.Added))
+	fmt.Fprintf(out, "removed: %d\n", len(report.Removed))
+	fmt.Fprintf(out, "moved between parents: %d\n", len(report.Moved))
+	if report.HasBreakingChanges() {
+		switch policy {
+		case compare.BreakingPolicyWarn:
+			fmt.Fprintln(out, "WARNING: breaking module changes detected")
+		case compare.BreakingPolicyIgnore:
+			fmt.Fprintln(out, "breaking module changes detected; policy is ignore")
+		default:
+			fmt.Fprintln(out, "ERROR: breaking module changes detected")
+		}
+	}
+	for _, info := range report.Removed {
+		fmt.Fprintf(out, "  removed %s (%s): %s\n", info.Code, info.EntityType, info.FilePath)
+	}
+	for _, moved := range report.Moved {
+		fmt.Fprintf(out, "  moved %s (%s): %s/%s -> %s/%s\n", moved.Code, moved.EntityType, moved.Old.ParentType, moved.Old.ParentCode, moved.New.ParentType, moved.New.ParentCode)
+	}
+	for _, info := range report.Added {
+		fmt.Fprintf(out, "  added %s (%s): %s\n", info.Code, info.EntityType, info.FilePath)
 	}
 }
