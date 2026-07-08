@@ -244,6 +244,7 @@ func TestModuleAuthoringCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("module edit section returned error: %v\n%s", err, output)
 	}
+	// #nosec G304 -- test reads a fixture output path under its temp module.
 	sectionYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
 	if err != nil {
 		t.Fatal(err)
@@ -285,6 +286,7 @@ func TestModuleAuthoringInlineQuizAndLabResources(t *testing.T) {
 		}
 	}
 
+	// #nosec G304 -- test reads a fixture output path under its temp module.
 	chapterYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "chapter.yml"))
 	if err != nil {
 		t.Fatal(err)
@@ -294,6 +296,7 @@ func TestModuleAuthoringInlineQuizAndLabResources(t *testing.T) {
 			t.Fatalf("chapter YAML does not contain %q:\n%s", want, chapterYAML)
 		}
 	}
+	// #nosec G304 -- test reads a fixture output path under its temp module.
 	challengeYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "assessments", "01-lab-one", "01-challenge-one", "challenge.yaml"))
 	if err != nil {
 		t.Fatal(err)
@@ -361,7 +364,7 @@ func copyCmdDir(t *testing.T, src, dst string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0700); err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
@@ -371,11 +374,13 @@ func copyCmdDir(t *testing.T, src, dst string) {
 			copyCmdDir(t, srcPath, dstPath)
 			continue
 		}
+		// #nosec G304 -- test copies controlled repository fixtures.
 		data, err := os.ReadFile(srcPath)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+		// #nosec G703 -- dstPath is constructed under this test's temp directory.
+		if err := os.WriteFile(dstPath, data, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

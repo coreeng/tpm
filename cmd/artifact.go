@@ -49,21 +49,29 @@ func runArtifactValidate(cmd *cobra.Command, paths []string, opts *artifactValid
 	for _, path := range paths {
 		result, err := artifact.ValidateModuleArtifact(path, opts.schemaDir)
 		if err != nil {
-			fmt.Fprintf(cmd.OutOrStdout(), "%s: ERROR: %v\n", path, err)
+			if _, writeErr := fmt.Fprintf(cmd.OutOrStdout(), "%s: ERROR: %v\n", path, err); writeErr != nil {
+				return writeErr
+			}
 			hadErrors = true
 			continue
 		}
 		if result.HasErrors() {
 			hadErrors = true
-			fmt.Fprintf(cmd.OutOrStdout(), "%s: validation failed\n", path)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: validation failed\n", path); err != nil {
+				return err
+			}
 			for _, issue := range result.Issues {
 				if issue.Level == validator.ErrorLevel {
-					fmt.Fprintf(cmd.OutOrStdout(), "  ERROR: %s [%s]: %s\n", issue.File, issue.Field, issue.Message)
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "  ERROR: %s [%s]: %s\n", issue.File, issue.Field, issue.Message); err != nil {
+						return err
+					}
 				}
 			}
 			continue
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "%s: ok\n", path)
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: ok\n", path); err != nil {
+			return err
+		}
 	}
 	if hadErrors {
 		return fmt.Errorf("artifact validation failed")
@@ -83,13 +91,19 @@ func newArtifactInspectCmd() *cobra.Command {
 					return err
 				}
 				sections, labs, quizzes := countBuiltContent(mod)
-				fmt.Fprintf(cmd.OutOrStdout(), "%s\n", artifactPath)
-				fmt.Fprintf(cmd.OutOrStdout(), "  code: %s\n", mod.Code)
-				fmt.Fprintf(cmd.OutOrStdout(), "  title: %s\n", mod.Title)
-				fmt.Fprintf(cmd.OutOrStdout(), "  chapters: %d\n", len(mod.Chapters))
-				fmt.Fprintf(cmd.OutOrStdout(), "  sections: %d\n", sections)
-				fmt.Fprintf(cmd.OutOrStdout(), "  labs: %d\n", labs)
-				fmt.Fprintf(cmd.OutOrStdout(), "  quizzes: %d\n", quizzes)
+				for _, line := range []string{
+					fmt.Sprintf("%s\n", artifactPath),
+					fmt.Sprintf("  code: %s\n", mod.Code),
+					fmt.Sprintf("  title: %s\n", mod.Title),
+					fmt.Sprintf("  chapters: %d\n", len(mod.Chapters)),
+					fmt.Sprintf("  sections: %d\n", sections),
+					fmt.Sprintf("  labs: %d\n", labs),
+					fmt.Sprintf("  quizzes: %d\n", quizzes),
+				} {
+					if _, err := fmt.Fprint(cmd.OutOrStdout(), line); err != nil {
+						return err
+					}
+				}
 			}
 			return nil
 		},
@@ -101,6 +115,7 @@ func loadBuiltModule(path string) (*module.BuiltModule, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+	// #nosec G304 -- artifactPath is resolved from a local CLI argument by ResolveModuleArtifactPath.
 	data, err := os.ReadFile(artifactPath)
 	if err != nil {
 		return nil, "", fmt.Errorf("read artifact %s: %w", artifactPath, err)

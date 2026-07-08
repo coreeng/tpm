@@ -63,7 +63,7 @@ func TestFileExists(t *testing.T) {
 	// Create a temporary file for testing
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test-file.txt")
-	if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte("test"), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -108,7 +108,7 @@ func TestDirExists(t *testing.T) {
 	// Create a temporary directory and file for testing
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test-file.txt")
-	if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte("test"), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

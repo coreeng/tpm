@@ -591,7 +591,7 @@ func TestRunEnsuresNamespacesAndSavesStateBeforeHelm(t *testing.T) {
 func TestCreateStarterTarballIncludesFilesEmptyDirsAndSymlinks(t *testing.T) {
 	src := filepath.Join(t.TempDir(), "starter-content")
 	writeFile(t, filepath.Join(src, "README.md"), "hello lab")
-	if err := os.MkdirAll(filepath.Join(src, "empty-dir"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(src, "empty-dir"), 0700); err != nil {
 		t.Fatalf("create empty dir: %v", err)
 	}
 	if err := os.Symlink("README.md", filepath.Join(src, "readme-link")); err != nil {
@@ -621,6 +621,28 @@ func TestCreateStarterTarballIncludesFilesEmptyDirsAndSymlinks(t *testing.T) {
 	}
 }
 
+func TestSafeTarArchiveNameRejectsUnsafePaths(t *testing.T) {
+	tests := []string{"", ".", "..", "../outside", `nested\outside`}
+	if os.PathSeparator == '\\' {
+		tests = tests[:4]
+	}
+	for _, tt := range tests {
+		if _, err := safeTarArchiveName(tt); err == nil {
+			t.Fatalf("safeTarArchiveName(%q) returned nil error", tt)
+		}
+	}
+}
+
+func TestSafeTarArchiveNameNormalizesSafePaths(t *testing.T) {
+	got, err := safeTarArchiveName(filepath.Join("nested", ".", "file.txt"))
+	if err != nil {
+		t.Fatalf("safeTarArchiveName returned error: %v", err)
+	}
+	if got != "nested/file.txt" {
+		t.Fatalf("safeTarArchiveName = %q, want nested/file.txt", got)
+	}
+}
+
 type tarEntry struct {
 	Typeflag byte
 	Linkname string
@@ -629,16 +651,21 @@ type tarEntry struct {
 
 func readTarGzEntries(t *testing.T, path string) map[string]tarEntry {
 	t.Helper()
+	// #nosec G304 -- test reads the tarball path it just created.
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("open tarball: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	gz, err := gzip.NewReader(file)
 	if err != nil {
 		t.Fatalf("read gzip: %v", err)
 	}
-	defer gz.Close()
+	defer func() {
+		_ = gz.Close()
+	}()
 	tr := tar.NewReader(gz)
 	entries := map[string]tarEntry{}
 	for {

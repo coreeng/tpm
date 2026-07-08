@@ -364,7 +364,7 @@ func addDirResource(parent, fileName string, at int, fields map[string]*yaml.Nod
 			fields["goals"] = &yaml.Node{Kind: yaml.SequenceNode}
 		}
 	}
-	if err := os.MkdirAll(parent, 0755); err != nil {
+	if err := os.MkdirAll(parent, 0750); err != nil {
 		return err
 	}
 	dirs, err := listResourceDirs(parent, fileName)
@@ -384,7 +384,7 @@ func addDirResource(parent, fileName string, at int, fields map[string]*yaml.Nod
 	if err := rewriteResourceDirs(parent, dirs); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(dirs[at-1].path, 0755); err != nil {
+	if err := os.MkdirAll(dirs[at-1].path, 0750); err != nil {
 		return err
 	}
 	return writeYAML(filepath.Join(dirs[at-1].path, fileName), mappingNode(fields))
@@ -632,6 +632,7 @@ func inlineSequence(path string, selectors []inlineSelector, create bool) (*yaml
 }
 
 func readYAMLNode(path string) (*yaml.Node, error) {
+	// #nosec G304 -- authoring commands intentionally edit local YAML paths selected by the CLI user.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -648,7 +649,7 @@ func writeYAML(path string, node *yaml.Node) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
 }
 
 func mappingNode(fields map[string]*yaml.Node) *yaml.Node {

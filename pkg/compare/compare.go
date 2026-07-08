@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/coreeng/tpm/pkg/module"
 	"gopkg.in/yaml.v3"
 )
+
+const maxExtractedArchiveFileBytes = 100 << 20
 
 type BreakingPolicy string
 
@@ -224,6 +227,7 @@ func collectSourceModule(codes map[string]CodeInfo, mod *module.Module, resolved
 }
 
 func collectBuiltFile(path string) (map[string]CodeInfo, error) {
+	// #nosec G304 -- compare intentionally reads a module artifact path supplied by the local CLI user.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -275,6 +279,7 @@ func collectBuiltFile(path string) (map[string]CodeInfo, error) {
 }
 
 func looksLikeBuiltArtifact(path string) bool {
+	// #nosec G304 -- compare intentionally probes a module artifact path supplied by the local CLI user.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false
@@ -314,6 +319,7 @@ func materializeGitLocation(location Location) (string, func(), error) {
 	cleanup := func() {
 		_ = os.RemoveAll(tempDir)
 	}
+	// #nosec G204 -- git is a fixed executable; ref/path are passed as argv and not through a shell.
 	cmd := exec.Command("git", "-C", repoRoot, "archive", "--format=tar", location.Ref, "--", relPath)
 	tarball, err := cmd.Output()
 	if err != nil {
@@ -353,6 +359,7 @@ func gitRelativePath(repoRoot, path string) (string, error) {
 }
 
 func gitOutput(args ...string) (string, error) {
+	// #nosec G204 -- git is a fixed executable; args are passed as argv and not through a shell.
 	output, err := exec.Command("git", args...).Output()
 	if err != nil {
 		return "", err
@@ -370,33 +377,83 @@ func untar(reader io.Reader, dir string) error {
 		if err != nil {
 			return err
 		}
-		cleanName := filepath.Clean(header.Name)
-		if cleanName == "." {
+		target, skip, err := safeTarTarget(dir, header.Name)
+		if err != nil {
+			return err
+		}
+		if skip {
 			continue
 		}
-		target := filepath.Join(dir, cleanName)
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := os.MkdirAll(target, 0700); err != nil {
 				return err
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
 				return err
 			}
-			file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(header.Mode))
+			// #nosec G304 -- target is validated by safeTarTarget to remain under dir.
+			file, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(file, tarReader); err != nil {
+			limitedReader := &io.LimitedReader{R: tarReader, N: maxExtractedArchiveFileBytes + 1}
+			// #nosec G110 -- extraction is bounded by maxExtractedArchiveFileBytes.
+			written, err := io.Copy(file, limitedReader)
+			if err != nil {
 				_ = file.Close()
 				return err
+			}
+			if written > maxExtractedArchiveFileBytes {
+				_ = file.Close()
+				return fmt.Errorf("archive entry %s exceeds %d bytes", header.Name, maxExtractedArchiveFileBytes)
 			}
 			if err := file.Close(); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+func safeTarTarget(rootDir, name string) (string, bool, error) {
+	if name == "" || name == "." {
+		return "", true, nil
+	}
+	if strings.ContainsRune(name, 0) {
+		return "", false, fmt.Errorf("archive entry %q contains a null byte", name)
+	}
+	if strings.Contains(name, "\\") {
+		return "", false, fmt.Errorf("archive entry %q contains a backslash path separator", name)
+	}
+	if path.IsAbs(name) || filepath.IsAbs(name) {
+		return "", false, fmt.Errorf("archive entry %q is absolute", name)
+	}
+
+	cleanName := path.Clean(name)
+	if cleanName == "." {
+		return "", true, nil
+	}
+	if cleanName == ".." || strings.HasPrefix(cleanName, "../") {
+		return "", false, fmt.Errorf("archive entry %q escapes extraction root", name)
+	}
+
+	rootAbs, err := filepath.Abs(rootDir)
+	if err != nil {
+		return "", false, err
+	}
+	targetAbs, err := filepath.Abs(filepath.Join(rootAbs, filepath.FromSlash(cleanName)))
+	if err != nil {
+		return "", false, err
+	}
+	rel, err := filepath.Rel(rootAbs, targetAbs)
+	if err != nil {
+		return "", false, err
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", false, fmt.Errorf("archive entry %q escapes extraction root", name)
+	}
+	return targetAbs, false, nil
 }
 
 func sortCodeInfos(infos []CodeInfo) {

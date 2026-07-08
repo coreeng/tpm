@@ -92,7 +92,7 @@ func copyEmbeddedSchemas(subdir, targetDir string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read embedded schema %s: %w", entry.Name(), err)
 		}
-		if err := os.WriteFile(filepath.Join(targetDir, entry.Name()), data, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(targetDir, entry.Name()), data, 0o600); err != nil {
 			return fmt.Errorf("failed to write embedded schema %s: %w", entry.Name(), err)
 		}
 	}
@@ -167,6 +167,7 @@ func registerSchemaResources(compiler *jsonschema.Compiler, kind SchemaKind, sch
 		}
 
 		localPath := filepath.Join(schemaDir, entry.Name())
+		// #nosec G304 -- localPath is constructed from a schema directory entry found by os.ReadDir.
 		data, err := os.ReadFile(localPath)
 		if err != nil {
 			return fmt.Errorf("failed to read schema %s: %w", entry.Name(), err)
@@ -225,6 +226,7 @@ func (v *Validator) ValidateYAMLFile(filePath, schemaName string) ([]ValidationE
 	}
 
 	// Read YAML file
+	// #nosec G304 -- validation intentionally reads the local YAML file selected by the CLI user.
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)

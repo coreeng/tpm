@@ -88,9 +88,13 @@ func List(ctx context.Context, opts Options) (string, error) {
 
 	var b strings.Builder
 	w := tabwriter.NewWriter(&b, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "RUN ID\tLAB CODE\tCREATED\tSYSTEM NAMESPACE\tWORKSPACE NAMESPACE")
+	if _, err := fmt.Fprintln(w, "RUN ID\tLAB CODE\tCREATED\tSYSTEM NAMESPACE\tWORKSPACE NAMESPACE"); err != nil {
+		return "", fmt.Errorf("render lab list: %w", err)
+	}
 	for _, lab := range rows {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", lab.RunID, lab.LabCode, formatCreatedAt(lab.CreatedAt), lab.SystemNamespace, lab.WorkspaceNamespace)
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", lab.RunID, lab.LabCode, formatCreatedAt(lab.CreatedAt), lab.SystemNamespace, lab.WorkspaceNamespace); err != nil {
+			return "", fmt.Errorf("render lab list: %w", err)
+		}
 	}
 	if err := w.Flush(); err != nil {
 		return "", fmt.Errorf("render lab list: %w", err)

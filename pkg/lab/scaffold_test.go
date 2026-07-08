@@ -232,7 +232,7 @@ func TestScaffoldStandaloneLab(t *testing.T) {
 	}
 
 	nonEmpty := filepath.Join(t.TempDir(), "existing")
-	if err := os.MkdirAll(nonEmpty, 0755); err != nil {
+	if err := os.MkdirAll(nonEmpty, 0700); err != nil {
 		t.Fatalf("create non-empty dir: %v", err)
 	}
 	writeFile(t, filepath.Join(nonEmpty, "keep.txt"), "do not overwrite")
@@ -482,6 +482,7 @@ func assertFileExists(t *testing.T, path string) {
 
 func readFile(t *testing.T, path string) string {
 	t.Helper()
+	// #nosec G304 -- test reads fixture paths under temp scaffold directories.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)

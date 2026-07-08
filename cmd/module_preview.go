@@ -65,9 +65,11 @@ func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string
 	if err != nil {
 		return err
 	}
-	defer listener.Close()
+	defer func() {
+		_ = listener.Close()
+	}()
 
-	server := &http.Server{Handler: mux}
+	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
 	go func() {
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
@@ -76,9 +78,13 @@ func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string
 	}()
 
 	url := "http://" + listener.Addr().String()
-	fmt.Fprintf(cmd.OutOrStdout(), "Module preview: %s\n", url)
+	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Module preview: %s\n", url); err != nil {
+		return err
+	}
 	if opts.watch {
-		fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading module metadata and markdown on refresh")
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading module metadata and markdown on refresh"); err != nil {
+			return err
+		}
 	}
 	if opts.open {
 		_ = openBrowser(url)

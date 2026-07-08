@@ -85,7 +85,7 @@ func TestListSkipsCorruptStateFileInsteadOfFailing(t *testing.T) {
 	if err := SaveState(stateDir, RunState{RunID: "good", LabPath: repoRoot + "/labs/good", CreatedAt: createdAt}); err != nil {
 		t.Fatalf("SaveState returned error: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(stateDir, "broken.yaml"), []byte("\tnot: [valid"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(stateDir, "broken.yaml"), []byte("\tnot: [valid"), 0600); err != nil {
 		t.Fatalf("write corrupt state returned error: %v", err)
 	}
 	runner := NewFakeRunner()

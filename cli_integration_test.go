@@ -11,6 +11,7 @@ import (
 func TestCLIRealCommandsAgainstFixtures(t *testing.T) {
 	tempDir := t.TempDir()
 	bin := filepath.Join(tempDir, "tpm")
+	// #nosec G204 -- integration test builds the local package with a fixed executable.
 	if output, err := exec.Command("go", "build", "-o", bin, ".").CombinedOutput(); err != nil {
 		t.Fatalf("go build failed: %v\n%s", err, output)
 	}
@@ -55,6 +56,7 @@ func TestCLIRealCommandsAgainstFixtures(t *testing.T) {
 
 func runCLI(t *testing.T, bin string, args ...string) string {
 	t.Helper()
+	// #nosec G204 -- integration test invokes the just-built TPM binary with test-controlled arguments.
 	cmd := exec.Command(bin, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -69,7 +71,7 @@ func copyIntegrationDir(t *testing.T, src, dst string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0700); err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
@@ -79,11 +81,13 @@ func copyIntegrationDir(t *testing.T, src, dst string) {
 			copyIntegrationDir(t, srcPath, dstPath)
 			continue
 		}
+		// #nosec G304 -- integration test copies controlled repository fixtures.
 		data, err := os.ReadFile(srcPath)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+		// #nosec G703 -- dstPath is constructed under this test's temp directory.
+		if err := os.WriteFile(dstPath, data, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

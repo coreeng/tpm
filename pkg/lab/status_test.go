@@ -157,7 +157,7 @@ func TestStatusSortsConditions(t *testing.T) {
 	completedIndex := assertStatusContainsToken(t, status, "Completed")
 	customLabIndex := assertStatusContainsToken(t, status, "Custom")
 	unknownIndex := assertStatusContainsToken(t, status, "ZZ_Custom")
-	if !(readyIndex < challengeIndex && challengeIndex < goalIndex && goalIndex < completedIndex && completedIndex < customLabIndex && customLabIndex < unknownIndex) {
+	if readyIndex >= challengeIndex || challengeIndex >= goalIndex || goalIndex >= completedIndex || completedIndex >= customLabIndex || customLabIndex >= unknownIndex {
 		t.Fatalf("conditions not sorted by type in status:\n%s", status)
 	}
 }

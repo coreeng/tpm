@@ -15,6 +15,7 @@ type Runner interface {
 type ExecRunner struct{}
 
 func (ExecRunner) Run(ctx context.Context, name string, args ...string) error {
+	// #nosec G204 -- the lab runner intentionally invokes local tools with argv, never through a shell.
 	output, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
 	if err != nil {
 		return commandError(name, args, output, err)
@@ -23,6 +24,7 @@ func (ExecRunner) Run(ctx context.Context, name string, args ...string) error {
 }
 
 func (ExecRunner) Output(ctx context.Context, name string, args ...string) ([]byte, error) {
+	// #nosec G204 -- the lab runner intentionally invokes local tools with argv, never through a shell.
 	output, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
 	if err != nil {
 		return output, commandError(name, args, output, err)

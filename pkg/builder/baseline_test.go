@@ -25,6 +25,7 @@ func TestBuildModule_Baseline(t *testing.T) {
 
 	// Read the built module
 	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	// #nosec G304 -- test reads the output path it just built.
 	actualBytes, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
@@ -35,7 +36,8 @@ func TestBuildModule_Baseline(t *testing.T) {
 
 	// If update flag is set, write the baseline and exit
 	if *updateBaseline {
-		if err := os.WriteFile(baselinePath, actualBytes, 0644); err != nil {
+		// #nosec G703 -- baselinePath is a controlled repository test fixture path.
+		if err := os.WriteFile(baselinePath, actualBytes, 0600); err != nil {
 			t.Fatalf("Failed to write baseline file: %v", err)
 		}
 		t.Logf("✓ Baseline file updated: %s", baselinePath)
@@ -44,6 +46,7 @@ func TestBuildModule_Baseline(t *testing.T) {
 	}
 
 	// Read the baseline file
+	// #nosec G304 -- test reads a controlled repository baseline fixture.
 	baselineBytes, err := os.ReadFile(baselinePath)
 	if err != nil {
 		t.Fatalf("Failed to read baseline file: %v\n"+
@@ -66,7 +69,8 @@ func TestBuildModule_Baseline(t *testing.T) {
 
 		// Also write the actual output for debugging
 		debugPath := filepath.Join("simple-module", "actual-output.yaml")
-		if err := os.WriteFile(debugPath, actualBytes, 0644); err == nil {
+		// #nosec G703 -- debugPath is a controlled test debug-output path.
+		if err := os.WriteFile(debugPath, actualBytes, 0600); err == nil {
 			t.Logf("Actual output written to: %s", debugPath)
 		}
 	}
@@ -83,6 +87,7 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 
 	// Read the built module
 	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	// #nosec G304 -- test reads the output path it just built.
 	data, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)

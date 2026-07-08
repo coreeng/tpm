@@ -71,7 +71,9 @@ func newModuleListCmd() *cobra.Command {
 				return err
 			}
 			for _, mod := range modules {
-				fmt.Fprintln(cmd.OutOrStdout(), mod.Name)
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), mod.Name); err != nil {
+					return err
+				}
 			}
 			return nil
 		},
@@ -105,7 +107,9 @@ func runModuleValidate(cmd *cobra.Command, paths []string, opts *moduleValidateO
 	for _, path := range paths {
 		mod, resolved, err := module.LoadPath(path)
 		if err != nil {
-			fmt.Fprintf(out, "%s: ERROR: %v\n", path, err)
+			if _, writeErr := fmt.Fprintf(out, "%s: ERROR: %v\n", path, err); writeErr != nil {
+				return writeErr
+			}
 			hadErrors = true
 			continue
 		}
@@ -117,15 +121,21 @@ func runModuleValidate(cmd *cobra.Command, paths []string, opts *moduleValidateO
 		}
 		if result.HasErrors() {
 			hadErrors = true
-			fmt.Fprintf(out, "%s: validation failed\n", resolved.Name)
+			if _, err := fmt.Fprintf(out, "%s: validation failed\n", resolved.Name); err != nil {
+				return err
+			}
 			for _, issue := range result.Issues {
 				if issue.Level == validator.ErrorLevel {
-					fmt.Fprintf(out, "  ERROR: %s [%s]: %s\n", issue.File, issue.Field, issue.Message)
+					if _, err := fmt.Fprintf(out, "  ERROR: %s [%s]: %s\n", issue.File, issue.Field, issue.Message); err != nil {
+						return err
+					}
 				}
 			}
 			continue
 		}
-		fmt.Fprintf(out, "%s: ok\n", resolved.Name)
+		if _, err := fmt.Fprintf(out, "%s: ok\n", resolved.Name); err != nil {
+			return err
+		}
 		modules = append(modules, mod)
 		names = append(names, resolved.Name)
 	}
@@ -137,11 +147,17 @@ func runModuleValidate(cmd *cobra.Command, paths []string, opts *moduleValidateO
 			sort.Slice(globalResult.Duplicates, func(i, j int) bool {
 				return globalResult.Duplicates[i].Code < globalResult.Duplicates[j].Code
 			})
-			fmt.Fprintln(out, "duplicate codes found:")
+			if _, err := fmt.Fprintln(out, "duplicate codes found:"); err != nil {
+				return err
+			}
 			for _, dup := range globalResult.Duplicates {
-				fmt.Fprintf(out, "  %s\n", dup.Code)
+				if _, err := fmt.Fprintf(out, "  %s\n", dup.Code); err != nil {
+					return err
+				}
 				for _, loc := range dup.Locations {
-					fmt.Fprintf(out, "    %s %s: %s\n", loc.ModuleName, loc.EntityType, loc.FilePath)
+					if _, err := fmt.Fprintf(out, "    %s %s: %s\n", loc.ModuleName, loc.EntityType, loc.FilePath); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -150,7 +166,9 @@ func runModuleValidate(cmd *cobra.Command, paths []string, opts *moduleValidateO
 	if hadErrors {
 		return fmt.Errorf("module validation failed")
 	}
-	fmt.Fprintf(out, "validated %d module(s)\n", len(modules))
+	if _, err := fmt.Fprintf(out, "validated %d module(s)\n", len(modules)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -197,7 +215,9 @@ func runModuleBuild(cmd *cobra.Command, paths []string, opts *moduleBuildOptions
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "%s -> %s\n", result.ModuleName, result.OutputFile)
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s -> %s\n", result.ModuleName, result.OutputFile); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -230,7 +250,9 @@ func newModuleGenerateCodesCmd() *cobra.Command {
 					failures = append(failures, fmt.Sprintf("%s: %v", path, err))
 					continue
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "%s: generated %d code(s) in %d file(s)\n", path, result.CodesAdded, len(result.FilesModified))
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: generated %d code(s) in %d file(s)\n", path, result.CodesAdded, len(result.FilesModified)); err != nil {
+					return err
+				}
 				for _, err := range result.Errors {
 					failures = append(failures, fmt.Sprintf("%s: %v", path, err))
 				}
@@ -256,7 +278,9 @@ func newModuleGenerateMarkdownCmd() *cobra.Command {
 					failures = append(failures, fmt.Sprintf("%s: %v", path, err))
 				}
 				if result != nil {
-					fmt.Fprintf(cmd.OutOrStdout(), "%s: created %d markdown file(s)\n", path, result.FilesCreated)
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: created %d markdown file(s)\n", path, result.FilesCreated); err != nil {
+						return err
+					}
 					for _, err := range result.Errors {
 						failures = append(failures, fmt.Sprintf("%s: %v", path, err))
 					}
@@ -297,7 +321,9 @@ module source directories, built artifact directories, or built module.yaml file
 			if err != nil {
 				return err
 			}
-			writeCompareReport(cmd, report, policy)
+			if err := writeCompareReport(cmd, report, policy); err != nil {
+				return err
+			}
 			if report.HasBreakingChanges() && policy == compare.BreakingPolicyError {
 				return fmt.Errorf("breaking module changes detected")
 			}
@@ -309,32 +335,55 @@ module source directories, built artifact directories, or built module.yaml file
 	return cmd
 }
 
-func writeCompareReport(cmd *cobra.Command, report *compare.Report, policy compare.BreakingPolicy) {
+func writeCompareReport(cmd *cobra.Command, report *compare.Report, policy compare.BreakingPolicy) error {
 	out := cmd.OutOrStdout()
-	fmt.Fprintf(out, "old: %s (%d code(s))\n", report.OldLocation, report.OldCount)
-	fmt.Fprintf(out, "new: %s (%d code(s))\n", report.NewLocation, report.NewCount)
-	fmt.Fprintf(out, "added: %d\n", len(report.Added))
-	fmt.Fprintf(out, "removed: %d\n", len(report.Removed))
-	fmt.Fprintf(out, "moved between parents: %d\n", len(report.Moved))
+	if _, err := fmt.Fprintf(out, "old: %s (%d code(s))\n", report.OldLocation, report.OldCount); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "new: %s (%d code(s))\n", report.NewLocation, report.NewCount); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "added: %d\n", len(report.Added)); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "removed: %d\n", len(report.Removed)); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "moved between parents: %d\n", len(report.Moved)); err != nil {
+		return err
+	}
 	if report.HasBreakingChanges() {
 		switch policy {
 		case compare.BreakingPolicyWarn:
-			fmt.Fprintln(out, "WARNING: breaking module changes detected")
+			if _, err := fmt.Fprintln(out, "WARNING: breaking module changes detected"); err != nil {
+				return err
+			}
 		case compare.BreakingPolicyIgnore:
-			fmt.Fprintln(out, "breaking module changes detected; policy is ignore")
+			if _, err := fmt.Fprintln(out, "breaking module changes detected; policy is ignore"); err != nil {
+				return err
+			}
 		default:
-			fmt.Fprintln(out, "ERROR: breaking module changes detected")
+			if _, err := fmt.Fprintln(out, "ERROR: breaking module changes detected"); err != nil {
+				return err
+			}
 		}
 	}
 	for _, info := range report.Removed {
-		fmt.Fprintf(out, "  removed %s (%s): %s\n", info.Code, info.EntityType, info.FilePath)
+		if _, err := fmt.Fprintf(out, "  removed %s (%s): %s\n", info.Code, info.EntityType, info.FilePath); err != nil {
+			return err
+		}
 	}
 	for _, moved := range report.Moved {
-		fmt.Fprintf(out, "  moved %s (%s): %s/%s -> %s/%s\n", moved.Code, moved.EntityType, moved.Old.ParentType, moved.Old.ParentCode, moved.New.ParentType, moved.New.ParentCode)
+		if _, err := fmt.Fprintf(out, "  moved %s (%s): %s/%s -> %s/%s\n", moved.Code, moved.EntityType, moved.Old.ParentType, moved.Old.ParentCode, moved.New.ParentType, moved.New.ParentCode); err != nil {
+			return err
+		}
 	}
 	for _, info := range report.Added {
-		fmt.Fprintf(out, "  added %s (%s): %s\n", info.Code, info.EntityType, info.FilePath)
+		if _, err := fmt.Fprintf(out, "  added %s (%s): %s\n", info.Code, info.EntityType, info.FilePath); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 type moduleAuthoringOptions struct {

@@ -39,7 +39,7 @@ chapters:
 func TestResolveModuleArtifactPathAcceptsFileAndDirectory(t *testing.T) {
 	dir := t.TempDir()
 	artifactPath := filepath.Join(dir, ModuleArtifactFile)
-	if err := os.WriteFile(artifactPath, []byte(validBuiltModule), 0o644); err != nil {
+	if err := os.WriteFile(artifactPath, []byte(validBuiltModule), 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 
@@ -62,7 +62,7 @@ func TestResolveModuleArtifactPathAcceptsFileAndDirectory(t *testing.T) {
 
 func TestValidateModuleArtifactUsesEmbeddedBuiltSchema(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), []byte(validBuiltModule), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), []byte(validBuiltModule), 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 
@@ -80,7 +80,7 @@ func TestValidateModuleArtifactReportsSchemaErrors(t *testing.T) {
 	invalid := []byte(`code: test-module-123
 title: Test Module
 `)
-	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), invalid, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), invalid, 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 

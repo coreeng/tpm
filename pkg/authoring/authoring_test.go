@@ -89,7 +89,7 @@ func copyAuthoringDir(t *testing.T, src, dst string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0700); err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
@@ -99,11 +99,13 @@ func copyAuthoringDir(t *testing.T, src, dst string) {
 			copyAuthoringDir(t, srcPath, dstPath)
 			continue
 		}
+		// #nosec G304 -- test copies controlled repository fixtures.
 		data, err := os.ReadFile(srcPath)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+		// #nosec G703 -- dstPath is constructed under this test's temp directory.
+		if err := os.WriteFile(dstPath, data, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

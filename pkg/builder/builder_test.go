@@ -30,6 +30,7 @@ func TestBuild_SimpleModule(t *testing.T) {
 
 	// Load and verify the output
 	var mod module.BuiltModule
+	// #nosec G304 -- test reads the output path it just built.
 	data, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
@@ -136,6 +137,7 @@ func TestBuild_IsDraftPreserved(t *testing.T) {
 
 	// Load and verify the output
 	var mod module.BuiltModule
+	// #nosec G304 -- test reads the output path it just built.
 	data, err := os.ReadFile(filepath.Join(outDir, "simple-module", "module.yaml"))
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)

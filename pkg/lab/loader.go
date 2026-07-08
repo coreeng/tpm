@@ -145,6 +145,7 @@ func findChallengeFile(path string) string {
 }
 
 func loadYAML(path string, into any) error {
+	// #nosec G304 -- lab loading intentionally reads local lab YAML selected by the CLI user.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -153,6 +154,7 @@ func loadYAML(path string, into any) error {
 }
 
 func readOptionalText(path string) (string, error) {
+	// #nosec G304 -- lab loading intentionally reads optional markdown from the selected local lab tree.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

@@ -135,7 +135,7 @@ func ensureMarkdownFile(dir, filename string) (bool, error) {
 
 	// File doesn't exist, create placeholder
 	content := "Placeholder\n"
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return false, fmt.Errorf("failed to create %s: %w", filename, err)
 	}
 

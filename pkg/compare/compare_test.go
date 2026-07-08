@@ -1,8 +1,11 @@
 package compare
 
 import (
+	"archive/tar"
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,13 +50,13 @@ func TestCompareDetectsCrossParentMove(t *testing.T) {
 	oldPath := copyFixtureModule(t)
 	newPath := copyFixtureModule(t)
 	newChapter := filepath.Join(newPath, "module", "02-next-chapter")
-	if err := os.MkdirAll(newChapter, 0755); err != nil {
+	if err := os.MkdirAll(newChapter, 0700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(newChapter, "chapter.yml"), []byte("code: next-chapter\ntitle: Next Chapter\nisDraft: false\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(newChapter, "chapter.yml"), []byte("code: next-chapter\ntitle: Next Chapter\nisDraft: false\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(newChapter, "description.md"), []byte("Next chapter\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(newChapter, "description.md"), []byte("Next chapter\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	oldSection := filepath.Join(newPath, "module", "01-chapter", "01-section")
@@ -82,6 +85,47 @@ func TestCompareSupportsPathAtGitRef(t *testing.T) {
 	}
 }
 
+func TestUntarRejectsArchiveEntriesOutsideRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(root, "..", "outside.txt")
+	err := untar(tarBuffer(t, "../outside.txt", "escaped"), root)
+	if err == nil {
+		t.Fatal("untar returned nil error for escaping archive entry")
+	}
+	if !strings.Contains(err.Error(), "escapes extraction root") {
+		t.Fatalf("untar error = %v, want escape error", err)
+	}
+	if _, err := os.Stat(outside); !os.IsNotExist(err) {
+		t.Fatalf("outside file exists or stat failed unexpectedly: %v", err)
+	}
+}
+
+func TestUntarRejectsBackslashArchiveEntries(t *testing.T) {
+	root := t.TempDir()
+	err := untar(tarBuffer(t, `..\outside.txt`, "escaped"), root)
+	if err == nil {
+		t.Fatal("untar returned nil error for backslash archive entry")
+	}
+	if !strings.Contains(err.Error(), "backslash") {
+		t.Fatalf("untar error = %v, want backslash error", err)
+	}
+}
+
+func TestUntarExtractsSafeArchiveEntries(t *testing.T) {
+	root := t.TempDir()
+	if err := untar(tarBuffer(t, "module/module.yaml", "code: demo\n"), root); err != nil {
+		t.Fatalf("untar returned error for safe entry: %v", err)
+	}
+	// #nosec G304 -- test reads the known temp-file path it just extracted.
+	data, err := os.ReadFile(filepath.Join(root, "module", "module.yaml"))
+	if err != nil {
+		t.Fatalf("read extracted file: %v", err)
+	}
+	if string(data) != "code: demo\n" {
+		t.Fatalf("extracted file = %q", data)
+	}
+}
+
 func copyFixtureModule(t *testing.T) string {
 	t.Helper()
 	src := filepath.Join("..", "builder", "testdata", "simple-module")
@@ -90,13 +134,33 @@ func copyFixtureModule(t *testing.T) string {
 	return dst
 }
 
+func tarBuffer(t *testing.T, name, contents string) *bytes.Reader {
+	t.Helper()
+	var buffer bytes.Buffer
+	writer := tar.NewWriter(&buffer)
+	if err := writer.WriteHeader(&tar.Header{
+		Name: name,
+		Mode: 0600,
+		Size: int64(len(contents)),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writer.Write([]byte(contents)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return bytes.NewReader(buffer.Bytes())
+}
+
 func copyDir(t *testing.T, src, dst string) {
 	t.Helper()
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0700); err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
@@ -106,11 +170,13 @@ func copyDir(t *testing.T, src, dst string) {
 			copyDir(t, srcPath, dstPath)
 			continue
 		}
+		// #nosec G304 -- test fixture copy reads files from a controlled repository testdata path.
 		data, err := os.ReadFile(srcPath)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+		// #nosec G703 -- dstPath is constructed under the test temp directory by copyDir.
+		if err := os.WriteFile(dstPath, data, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

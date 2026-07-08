@@ -88,12 +88,7 @@ func toBuiltChallenge(challenge module.Challenge) module.BuiltChallenge {
 		Goals:             make([]module.BuiltGoal, 0, len(challenge.Goals)),
 	}
 	for _, goal := range challenge.Goals {
-		built.Goals = append(built.Goals, module.BuiltGoal{
-			Code:        goal.Code,
-			Index:       goal.Index,
-			Title:       goal.Title,
-			Description: goal.Description,
-		})
+		built.Goals = append(built.Goals, module.BuiltGoal(goal))
 	}
 	return built
 }
@@ -122,11 +117,7 @@ func toBuiltQuestion(question module.Question) module.BuiltQuestion {
 		Options:  make([]module.BuiltOption, 0, len(question.Options)),
 	}
 	for _, option := range question.Options {
-		built.Options = append(built.Options, module.BuiltOption{
-			Index:   option.Index,
-			Text:    option.Text,
-			Correct: option.Correct,
-		})
+		built.Options = append(built.Options, module.BuiltOption(option))
 	}
 	return built
 }

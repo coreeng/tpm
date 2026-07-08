@@ -53,17 +53,18 @@ func SaveState(stateDir string, state RunState) error {
 	if err := validateRunID(state.RunID); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(stateDir, 0755); err != nil {
+	if err := os.MkdirAll(stateDir, 0700); err != nil {
 		return err
 	}
 	contents, err := yaml.Marshal(state)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(stateDir, state.RunID+".yaml"), contents, 0644)
+	return os.WriteFile(filepath.Join(stateDir, state.RunID+".yaml"), contents, 0600)
 }
 
 func LoadState(path string) (*RunState, error) {
+	// #nosec G304 -- lab state loading intentionally reads a local TPM state file selected by ID/path resolution.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

@@ -130,7 +130,9 @@ func validateBuiltModule(mod *module.BuiltModule) *validator.ValidationResult {
 		result.AddError("", "schema", fmt.Sprintf("failed to create temp output directory: %v", err))
 		return result
 	}
-	defer os.RemoveAll(outDir)
+	defer func() {
+		_ = os.RemoveAll(outDir)
+	}()
 	if err := writeModule(mod, outDir); err != nil {
 		result.AddError("", "schema", fmt.Sprintf("failed to write temp built module: %v", err))
 		return result
