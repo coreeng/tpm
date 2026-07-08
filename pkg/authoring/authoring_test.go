@@ -52,15 +52,15 @@ func TestAddMoveRemoveSectionByExplicitIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Add section returned error: %v", err)
 	}
-	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
-	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "02-section", "section.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "01-new-section", "section.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "02-what-is-kubernetes", "section.yaml"))
 
 	err = Move(modulePath, "section", Options{Chapter: 1, From: 2, To: 1})
 	if err != nil {
 		t.Fatalf("Move section returned error: %v", err)
 	}
-	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-section", "section.yaml"))
-	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "02-new-section", "section.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes", "section.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "02-new-section", "section.yaml"))
 
 	err = Remove(modulePath, "section", Options{Chapter: 1, From: 2, Yes: true, BreakingPolicy: BreakingPolicyError})
 	if err == nil || !strings.Contains(err.Error(), "breaking change") {
@@ -70,7 +70,7 @@ func TestAddMoveRemoveSectionByExplicitIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Remove section with warn policy returned error: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(modulePath, "module", "01-chapter", "02-new-section")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(modulePath, "module", "01-cluster-fundamentals", "02-new-section")); !os.IsNotExist(err) {
 		t.Fatalf("removed section still exists or stat failed unexpectedly: %v", err)
 	}
 }

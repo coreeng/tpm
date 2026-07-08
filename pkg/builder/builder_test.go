@@ -40,23 +40,22 @@ func TestBuild_SimpleModule(t *testing.T) {
 		t.Fatalf("Failed to unmarshal output YAML: %v", err)
 	}
 
-	// Verify basic structure
-	if mod.Code != "test-module-123" {
-		t.Errorf("Expected module code 'test-module-123', got '%s'", mod.Code)
+	if mod.Code != "kubernetes-101" {
+		t.Errorf("Expected module code 'kubernetes-101', got '%s'", mod.Code)
 	}
 
-	if mod.Title != "Test Module" {
-		t.Errorf("Expected title 'Test Module', got '%s'", mod.Title)
+	if mod.Title != "Kubernetes 101" {
+		t.Errorf("Expected title 'Kubernetes 101', got '%s'", mod.Title)
 	}
 
-	if len(mod.Chapters) != 1 {
-		t.Fatalf("Expected 1 chapter, got %d", len(mod.Chapters))
+	if len(mod.Chapters) != 3 {
+		t.Fatalf("Expected 3 chapters, got %d", len(mod.Chapters))
 	}
 
 	// Verify chapter
 	ch := mod.Chapters[0]
-	if ch.Code != "test-chapter-456" {
-		t.Errorf("Expected chapter code 'test-chapter-456', got '%s'", ch.Code)
+	if ch.Code != "cluster-fundamentals" {
+		t.Errorf("Expected chapter code 'cluster-fundamentals', got '%s'", ch.Code)
 	}
 
 	if ch.Index != 1 {
@@ -69,17 +68,16 @@ func TestBuild_SimpleModule(t *testing.T) {
 	}
 
 	sec := ch.Sections[0]
-	if sec.Code != "test-section-789" {
-		t.Errorf("Expected section code 'test-section-789', got '%s'", sec.Code)
+	if sec.Code != "what-is-kubernetes" {
+		t.Errorf("Expected section code 'what-is-kubernetes', got '%s'", sec.Code)
 	}
 
 	if sec.Index != 1 {
 		t.Errorf("Expected section index 1, got %d", sec.Index)
 	}
 
-	// Verify isDraft is preserved
-	if !ch.IsDraft {
-		t.Errorf("Expected chapter isDraft to be true, got false")
+	if ch.IsDraft {
+		t.Errorf("Expected chapter isDraft to be false, got true")
 	}
 
 	t.Logf("✓ Build test passed successfully")
@@ -126,7 +124,7 @@ func TestAssignIndices(t *testing.T) {
 	t.Logf("✓ Index assignment test passed")
 }
 
-func TestBuild_IsDraftPreserved(t *testing.T) {
+func TestBuild_IsDraftFalsePreserved(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
@@ -147,14 +145,14 @@ func TestBuild_IsDraftPreserved(t *testing.T) {
 		t.Fatalf("Failed to unmarshal output YAML: %v", err)
 	}
 
-	// Verify isDraft is preserved when set to true
+	// Verify isDraft is preserved when set to false
 	if len(mod.Chapters) == 0 {
 		t.Fatalf("Expected at least 1 chapter, got 0")
 	}
 
 	ch := mod.Chapters[0]
-	if !ch.IsDraft {
-		t.Errorf("Expected chapter isDraft to be true, got false")
+	if ch.IsDraft {
+		t.Errorf("Expected chapter isDraft to be false, got true")
 	}
 
 	t.Logf("✓ isDraft preservation test passed")

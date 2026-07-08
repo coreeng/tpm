@@ -1,0 +1,4 @@
+code: workloads
+title: Running workloads
+shortDescription: Learn how Pods, Deployments, and Services work together.
+isDraft: false

@@ -12,7 +12,7 @@ import (
 func TestCompareDetectsRemovedCode(t *testing.T) {
 	oldPath := copyFixtureModule(t)
 	newPath := copyFixtureModule(t)
-	if err := os.RemoveAll(filepath.Join(newPath, "module", "01-chapter", "01-section")); err != nil {
+	if err := os.RemoveAll(filepath.Join(newPath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -23,16 +23,16 @@ func TestCompareDetectsRemovedCode(t *testing.T) {
 	if !report.HasBreakingChanges() {
 		t.Fatal("expected removed section to be breaking")
 	}
-	if len(report.Removed) != 1 || report.Removed[0].Code != "test-section-789" {
-		t.Fatalf("removed = %#v, want test-section-789", report.Removed)
+	if len(report.Removed) != 1 || report.Removed[0].Code != "what-is-kubernetes" {
+		t.Fatalf("removed = %#v, want what-is-kubernetes", report.Removed)
 	}
 }
 
 func TestCompareTreatsSameParentReorderAsNonBreaking(t *testing.T) {
 	oldPath := copyFixtureModule(t)
 	newPath := copyFixtureModule(t)
-	oldSection := filepath.Join(newPath, "module", "01-chapter", "01-section")
-	newSection := filepath.Join(newPath, "module", "01-chapter", "02-section")
+	oldSection := filepath.Join(newPath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes")
+	newSection := filepath.Join(newPath, "module", "01-cluster-fundamentals", "02-what-is-kubernetes")
 	if err := os.Rename(oldSection, newSection); err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestCompareTreatsSameParentReorderAsNonBreaking(t *testing.T) {
 func TestCompareDetectsCrossParentMove(t *testing.T) {
 	oldPath := copyFixtureModule(t)
 	newPath := copyFixtureModule(t)
-	newChapter := filepath.Join(newPath, "module", "02-next-chapter")
+	newChapter := filepath.Join(newPath, "module", "04-next-chapter")
 	if err := os.MkdirAll(newChapter, 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -59,8 +59,8 @@ func TestCompareDetectsCrossParentMove(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(newChapter, "description.md"), []byte("Next chapter\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	oldSection := filepath.Join(newPath, "module", "01-chapter", "01-section")
-	newSection := filepath.Join(newChapter, "01-section")
+	oldSection := filepath.Join(newPath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes")
+	newSection := filepath.Join(newChapter, "01-what-is-kubernetes")
 	if err := os.Rename(oldSection, newSection); err != nil {
 		t.Fatal(err)
 	}
@@ -69,19 +69,19 @@ func TestCompareDetectsCrossParentMove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Moved) != 1 || report.Moved[0].Code != "test-section-789" {
+	if len(report.Moved) != 1 || report.Moved[0].Code != "what-is-kubernetes" {
 		t.Fatalf("moved = %#v, want section move", report.Moved)
 	}
 }
 
 func TestCompareSupportsPathAtGitRef(t *testing.T) {
 	fixture := filepath.Join("..", "builder", "testdata", "simple-module")
-	report, err := Compare(fixture+"@HEAD", fixture)
+	report, err := Compare(fixture+"@HEAD", fixture+"@HEAD")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if report.HasBreakingChanges() {
-		t.Fatalf("HEAD fixture compared to working tree should not be breaking: %#v", report)
+		t.Fatalf("HEAD fixture compared to itself should not be breaking: %#v", report)
 	}
 }
 

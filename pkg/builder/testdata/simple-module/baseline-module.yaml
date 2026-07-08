@@ -1,31 +1,117 @@
-code: test-module-123
-title: Test Module
+code: kubernetes-101
+title: Kubernetes 101
 description: |
-    A simple test module for testing purposes
-shortDescription: Test
-bannerImage: https://example.com/banner.png
-bannerVideo: https://example.com/video.mp4
+    Kubernetes 101 introduces the building blocks behind day-to-day Kubernetes work.
+
+    You will learn how clusters are organized, how applications run as workloads, and how to inspect an application when something does not behave as expected.
+shortDescription: Learn the core Kubernetes concepts needed to run a small application.
+bannerImage: https://storage.googleapis.com/cdn-training-platform/kubernetes.png
 tags:
-    - test
+    - kubernetes
+    - containers
+    - platform engineering
 level: BEGINNER
 chapters:
-    - code: test-chapter-456
+    - code: cluster-fundamentals
       index: 1
-      title: Test Chapter
+      title: Cluster fundamentals
       description: |
-        A test chapter
-      shortDescription: Test chapter
+        Kubernetes is a platform for running containers across a group of machines.
+
+        This chapter explains the cluster model: the API server stores desired state, the control plane coordinates work, and nodes run application containers.
+      shortDescription: Understand the control plane, nodes, namespaces, and API server.
       bannerImage: ""
       bannerVideo: ""
-      isDraft: true
+      isDraft: false
       sections:
-        - code: test-section-789
+        - code: what-is-kubernetes
           index: 1
-          title: Test Section
+          title: What Kubernetes manages
           description: |
-            A test section
-          shortDescription: A brief test section
-          video: https://example.com/video.mp4
-          estimatedDuration: 30m
+            Kubernetes manages containers by reconciling desired state with actual state.
+
+            You submit objects such as Pods, Deployments, and Services to the API server. Controllers watch those objects and make changes until the cluster matches the requested configuration.
+          shortDescription: Learn how Kubernetes turns declared desired state into running workloads.
+          estimatedDuration: 15m
       assessments: []
       multipleChoiceAssessments: []
+    - code: workloads
+      index: 2
+      title: Running workloads
+      description: |
+        Applications usually run through higher-level workload objects rather than hand-managed containers.
+
+        This chapter covers the path from a container image to a reliable application endpoint inside the cluster.
+      shortDescription: Learn how Pods, Deployments, and Services work together.
+      bannerImage: ""
+      bannerVideo: ""
+      isDraft: false
+      sections:
+        - code: pods-deployments-and-services
+          index: 1
+          title: Pods, Deployments, and Services
+          description: |
+            A Pod is the smallest deployable unit in Kubernetes. It usually wraps one application container and the metadata Kubernetes needs to run it.
+
+            A Deployment manages replicated Pods and rolls changes out over time. A Service gives those Pods a stable network identity even as individual Pods are replaced.
+          shortDescription: Connect the smallest runtime unit to rollout and networking primitives.
+          estimatedDuration: 20m
+      assessments: []
+      multipleChoiceAssessments: []
+    - code: operating-apps
+      index: 3
+      title: Operating applications
+      description: |
+        Running an application is only the start.
+
+        This chapter introduces the commands and signals operators use to understand what Kubernetes is doing and where a workload needs attention.
+      shortDescription: Inspect application health and troubleshoot common runtime issues.
+      bannerImage: ""
+      bannerVideo: ""
+      isDraft: false
+      sections:
+        - code: observe-and-troubleshoot
+          index: 1
+          title: Observe and troubleshoot
+          description: |
+            Kubernetes exposes useful feedback through object status, events, and container logs.
+
+            Start with `kubectl get` to check whether objects exist, use `kubectl describe` to inspect events and scheduling decisions, and use `kubectl logs` when the application process itself needs investigation.
+          shortDescription: Use status, events, and logs to inspect a running application.
+          estimatedDuration: 20m
+      assessments: []
+      multipleChoiceAssessments:
+        - code: kubernetes-operations-check
+          index: 0
+          title: Kubernetes operations check
+          description: Check the core concepts from this Kubernetes 101 module.
+          passingScore: 70
+          questions:
+            - code: deployment-purpose
+              index: 0
+              question: What does a Deployment primarily manage?
+              type: SINGLE
+              options:
+                - index: 0
+                  text: Rollouts and replicas for Pods
+                  correct: true
+                - index: 1
+                  text: Persistent storage volumes only
+                  correct: false
+                - index: 2
+                  text: External DNS records only
+                  correct: false
+            - code: service-purpose
+              index: 1
+              question: Why do applications commonly use a Service?
+              type: SINGLE
+              options:
+                - index: 0
+                  text: To provide a stable network endpoint for changing Pods
+                  correct: true
+                - index: 1
+                  text: To rebuild container images inside the cluster
+                  correct: false
+                - index: 2
+                  text: To replace the Kubernetes API server
+                  correct: false

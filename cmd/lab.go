@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net"
 	"net/http"
 	"os/exec"
@@ -337,91 +336,4 @@ func openBrowser(url string) error {
 	}
 }
 
-var labPreviewTemplate = template.Must(template.New("lab-preview").Parse(`<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{.Title}}</title>
-<style>
-:root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202124; background: #f6f7f9; }
-body { margin: 0; }
-main { max-width: 1120px; margin: 0 auto; padding: 32px 20px; }
-header { margin-bottom: 24px; }
-h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; }
-h2 { font-size: 20px; margin: 0 0 12px; }
-p { line-height: 1.55; }
-.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.meta span { border: 1px solid #d8dde6; border-radius: 6px; background: #fff; padding: 6px 8px; font-size: 13px; }
-.layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
-.panel { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 18px; }
-.challenge-list { display: grid; gap: 8px; }
-button { width: 100%; text-align: left; border: 1px solid #c6ccd6; background: #fff; border-radius: 6px; padding: 10px 12px; cursor: pointer; font: inherit; }
-button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
-.goal { border-top: 1px solid #e4e7ec; padding: 12px 0; }
-.goal:first-child { border-top: 0; }
-.muted { color: #5f6368; }
-pre { white-space: pre-wrap; font: inherit; }
-@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } main { padding: 20px 14px; } }
-</style>
-</head>
-<body>
-<main>
-<header>
-<h1>{{.Title}}</h1>
-{{if .TimeLimit}}<div class="muted">{{.TimeLimit}}</div>{{end}}
-{{if .Description}}<pre>{{.Description}}</pre>{{end}}
-{{if .State}}<div class="meta">
-<span>Run {{.State.RunID}}</span>
-<span>System {{.State.SystemNamespace}}</span>
-<span>Workspace {{.State.WorkspaceNamespace}}</span>
-<span>Registry {{.State.RegistryURL}}</span>
-</div>{{end}}
-</header>
-<section class="layout">
-<nav class="panel">
-<h2>Challenges</h2>
-<div class="challenge-list">
-{{range $i, $challenge := .Challenges}}
-<button type="button" data-index="{{$i}}">{{$challenge.Title}}</button>
-{{end}}
-</div>
-</nav>
-<article class="panel" id="challenge"></article>
-</section>
-</main>
-<script>
-const challenges = [
-{{range .Challenges}}{
-  title: {{printf "%q" .Title}},
-  description: {{printf "%q" .Description}},
-  successMessage: {{printf "%q" .SuccessMessage}},
-  goals: [
-    {{range .Goals}}{ title: {{printf "%q" .Title}}, description: {{printf "%q" .Description}} },
-    {{end}}
-  ]
-},
-{{end}}
-];
-const buttons = [...document.querySelectorAll('button[data-index]')];
-const detail = document.getElementById('challenge');
-function render(index) {
-  const challenge = challenges[index];
-  buttons.forEach((button) => button.classList.toggle('active', button.dataset.index == index));
-  if (!challenge) {
-    detail.innerHTML = '<p class="muted">No challenges found.</p>';
-    return;
-  }
-  detail.innerHTML = '<h2>' + escapeHtml(challenge.title) + '</h2>' +
-    (challenge.description ? '<pre>' + escapeHtml(challenge.description) + '</pre>' : '') +
-    challenge.goals.map((goal, goalIndex) => '<div class="goal"><strong>' + (goalIndex + 1) + '. ' + escapeHtml(goal.title) + '</strong>' + (goal.description ? '<p>' + escapeHtml(goal.description) + '</p>' : '') + '</div>').join('') +
-    (challenge.successMessage ? '<p class="muted">' + escapeHtml(challenge.successMessage) + '</p>' : '');
-}
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-}
-buttons.forEach((button) => button.addEventListener('click', () => render(Number(button.dataset.index))));
-render(0);
-</script>
-</body>
-</html>`))
+var labPreviewTemplate = mustPreviewTemplate("lab_preview.tmpl")

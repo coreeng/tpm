@@ -165,7 +165,7 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 	if err := modulePreviewTemplate.Execute(&rendered, built); err != nil {
 		t.Fatalf("module preview template returned error: %v", err)
 	}
-	for _, want := range []string{"Test Module", "Test Chapter", "Test Section"} {
+	for _, want := range []string{"Kubernetes 101", `<span class="toc-number">1.</span>`, `<span class="toc-number">2.</span>`, `<span class="toc-number">3.</span>`, "Cluster fundamentals", "Pods, Deployments, and Services", "Kubernetes operations check"} {
 		if !strings.Contains(rendered.String(), want) {
 			t.Fatalf("module preview render does not contain %q:\n%s", want, rendered.String())
 		}
@@ -214,7 +214,7 @@ func TestLabPreviewValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
 func TestModuleCompareBreakingPolicy(t *testing.T) {
 	oldPath := copyCmdFixtureModule(t)
 	newPath := copyCmdFixtureModule(t)
-	if err := os.RemoveAll(filepath.Join(newPath, "module", "01-chapter", "01-section")); err != nil {
+	if err := os.RemoveAll(filepath.Join(newPath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -249,14 +249,14 @@ func TestModuleAuthoringCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("module add section returned error: %v\n%s", err, output)
 	}
-	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
+	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "01-new-section", "section.yaml"))
 
 	output, err = executeRootCommand("module", "edit", "section", modulePath, "--chapter", "1", "--section", "1", "--set", "title=Edited Section")
 	if err != nil {
 		t.Fatalf("module edit section returned error: %v\n%s", err, output)
 	}
 	// #nosec G304 -- test reads a fixture output path under its temp module.
-	sectionYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "01-new-section", "section.yaml"))
+	sectionYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-cluster-fundamentals", "01-new-section", "section.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +268,7 @@ func TestModuleAuthoringCommands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("module move section returned error: %v\n%s", err, output)
 	}
-	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-chapter", "01-section", "section.yaml"))
+	assertCmdFileExists(t, filepath.Join(modulePath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes", "section.yaml"))
 
 	output, err = executeRootCommand("module", "remove", "section", modulePath, "--chapter", "1", "--from", "2", "--yes", "--breaking-policy", "warn")
 	if err != nil {
@@ -298,7 +298,7 @@ func TestModuleAuthoringInlineQuizAndLabResources(t *testing.T) {
 	}
 
 	// #nosec G304 -- test reads a fixture output path under its temp module.
-	chapterYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "chapter.yml"))
+	chapterYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-cluster-fundamentals", "chapter.yml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestModuleAuthoringInlineQuizAndLabResources(t *testing.T) {
 		}
 	}
 	// #nosec G304 -- test reads a fixture output path under its temp module.
-	challengeYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-chapter", "assessments", "01-lab-one", "01-challenge-one", "challenge.yaml"))
+	challengeYAML, err := os.ReadFile(filepath.Join(modulePath, "module", "01-cluster-fundamentals", "assessments", "01-lab-one", "01-challenge-one", "challenge.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

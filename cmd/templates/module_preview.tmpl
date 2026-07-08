@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+:root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202124; background: #f6f7f9; }
+body { margin: 0; }
+main { max-width: 1180px; margin: 0 auto; padding: 32px 20px; }
+header { margin-bottom: 24px; }
+h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; }
+h2 { font-size: 22px; margin: 0 0 12px; }
+h3 { font-size: 16px; margin: 18px 0 8px; }
+p, pre { line-height: 1.55; }
+pre { white-space: pre-wrap; font: inherit; margin: 0; }
+.layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+.panel { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 18px; }
+.chapter-list { display: grid; gap: 8px; }
+button { border: 1px solid #c6ccd6; background: #fff; border-radius: 6px; padding: 9px 11px; cursor: pointer; font: inherit; }
+.chapter-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
+button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
+.toc-number { color: #5f6368; font-variant-numeric: tabular-nums; }
+.item { border-top: 1px solid #e4e7ec; padding: 14px 0; }
+.item:first-child { border-top: 0; }
+.muted { color: #5f6368; }
+.hidden { display: none; }
+.video { display: inline-block; margin-top: 8px; color: #1a73e8; text-decoration: none; }
+.quiz-option { display: block; width: auto; min-width: 220px; margin: 8px 0; text-align: left; cursor: default; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } main { padding: 20px 14px; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>{{.Title}}</h1>
+<div class="muted">{{.Level}}</div>
+{{if .Description}}<pre>{{.Description}}</pre>{{end}}
+</header>
+<section class="layout">
+<nav class="panel">
+<h2>Chapters</h2>
+<div class="chapter-list">
+{{range $i, $chapter := .Chapters}}
+<button type="button" data-target="chapter-{{$i}}"{{if eq $i 0}} class="active"{{end}}>
+<span class="toc-number">{{add1 $i}}.</span>
+<span>{{$chapter.Title}}</span>
+</button>
+{{end}}
+</div>
+</nav>
+<article class="panel">
+{{range $i, $chapter := .Chapters}}
+<section id="chapter-{{$i}}" class="chapter-detail{{if ne $i 0}} hidden{{end}}">
+<h2>{{add1 $i}}. {{$chapter.Title}}</h2>
+{{if $chapter.Description}}<pre>{{$chapter.Description}}</pre>{{end}}
+{{if $chapter.BannerVideo}}<a class="video" href="{{$chapter.BannerVideo}}">Video link</a>{{end}}
+{{range $section := $chapter.Sections}}
+<div class="item">
+<h3>{{$section.Title}}</h3>
+{{if $section.EstimatedDuration}}<div class="muted">{{$section.EstimatedDuration}}</div>{{end}}
+{{if $section.Description}}<pre>{{$section.Description}}</pre>{{end}}
+{{if $section.Video}}<a class="video" href="{{$section.Video}}">Video link</a>{{end}}
+</div>
+{{end}}
+{{range $lab := $chapter.Assessments}}
+<div class="item">
+<h3>{{$lab.Title}}</h3>
+{{if $lab.Description}}<pre>{{$lab.Description}}</pre>{{end}}
+{{range $challenge := $lab.Challenges}}
+<h3>{{$challenge.Title}}</h3>
+{{if $challenge.Description}}<pre>{{$challenge.Description}}</pre>{{end}}
+{{range $goalIndex, $goal := $challenge.Goals}}
+<p><strong>{{add1 $goalIndex}}. {{$goal.Title}}</strong><br>{{$goal.Description}}</p>
+{{end}}
+{{end}}
+</div>
+{{end}}
+{{range $quiz := $chapter.MultipleChoiceAssessments}}
+<div class="item">
+<h3>{{$quiz.Title}}</h3>
+<p>{{$quiz.Description}}</p>
+{{range $question := $quiz.Questions}}
+<p><strong>{{$question.Question}}</strong></p>
+{{range $option := $question.Options}}
+<button class="quiz-option" type="button">{{$option.Text}}</button>
+{{end}}
+{{end}}
+</div>
+{{end}}
+</section>
+{{end}}
+</article>
+</section>
+</main>
+<script>
+const buttons = [...document.querySelectorAll('button[data-target]')];
+const panels = [...document.querySelectorAll('.chapter-detail')];
+function showChapter(target) {
+  buttons.forEach((button) => button.classList.toggle('active', button.dataset.target === target));
+  panels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== target));
+}
+buttons.forEach((button) => button.addEventListener('click', () => showChapter(button.dataset.target)));
+</script>
+</body>
+</html>

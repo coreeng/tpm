@@ -100,12 +100,12 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 
 	// Verify basic structure
-	if mod.Code != "test-module-123" {
-		t.Errorf("Expected module code 'test-module-123', got '%s'", mod.Code)
+	if mod.Code != "kubernetes-101" {
+		t.Errorf("Expected module code 'kubernetes-101', got '%s'", mod.Code)
 	}
 
-	if mod.Title != "Test Module" {
-		t.Errorf("Expected module title 'Test Module', got '%s'", mod.Title)
+	if mod.Title != "Kubernetes 101" {
+		t.Errorf("Expected module title 'Kubernetes 101', got '%s'", mod.Title)
 	}
 
 	// Verify description was merged from markdown
@@ -118,13 +118,13 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 
 	// Verify chapters
-	if len(mod.Chapters) != 1 {
-		t.Fatalf("Expected 1 chapter, got %d", len(mod.Chapters))
+	if len(mod.Chapters) != 3 {
+		t.Fatalf("Expected 3 chapters, got %d", len(mod.Chapters))
 	}
 
 	chapter := mod.Chapters[0]
-	if chapter.Code != "test-chapter-456" {
-		t.Errorf("Expected chapter code 'test-chapter-456', got '%s'", chapter.Code)
+	if chapter.Code != "cluster-fundamentals" {
+		t.Errorf("Expected chapter code 'cluster-fundamentals', got '%s'", chapter.Code)
 	}
 
 	// Verify chapter description was merged from markdown
@@ -138,8 +138,8 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 
 	section := chapter.Sections[0]
-	if section.Code != "test-section-789" {
-		t.Errorf("Expected section code 'test-section-789', got '%s'", section.Code)
+	if section.Code != "what-is-kubernetes" {
+		t.Errorf("Expected section code 'what-is-kubernetes', got '%s'", section.Code)
 	}
 
 	// Verify section description was merged from markdown
