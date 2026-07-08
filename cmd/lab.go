@@ -124,9 +124,9 @@ func writeLabOutline(cmd *cobra.Command, loaded *lab.Lab, opts *labOutlineOption
 }
 
 type labPreviewOptions struct {
-	addr  string
-	open  bool
-	watch bool
+	addr          string
+	noOpenBrowser bool
+	watch         bool
 }
 
 type labPreviewPage struct {
@@ -157,7 +157,7 @@ func newLabPreviewCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&runtimeOpts.AssumeImageAccessible, "assume-image-accessible", false, "assume a non-kind cluster can pull the local validator image tag")
 	cmd.Flags().DurationVar(&runtimeOpts.CheckInterval, "check-interval", 5*time.Second, "validator check interval")
 	cmd.Flags().StringVar(&previewOpts.addr, "addr", "127.0.0.1:0", "Address to listen on")
-	cmd.Flags().BoolVar(&previewOpts.open, "open", false, "Open the preview URL in the default browser")
+	cmd.Flags().BoolVar(&previewOpts.noOpenBrowser, "no-open-browser", false, "Do not open the preview URL in the default browser")
 	cmd.Flags().BoolVar(&previewOpts.watch, "watch", false, "Reload lab metadata and markdown on each browser refresh")
 	return cmd
 }
@@ -246,7 +246,7 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 			return err
 		}
 	}
-	if previewOpts.open {
+	if !previewOpts.noOpenBrowser {
 		_ = openBrowser(url)
 	}
 

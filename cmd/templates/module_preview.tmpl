@@ -11,22 +11,37 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px; }
 header { margin-bottom: 24px; }
 h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; }
 h2 { font-size: 22px; margin: 0 0 12px; }
-h3 { font-size: 16px; margin: 18px 0 8px; }
+h3 { font-size: 18px; margin: 0 0 8px; }
 p, pre { line-height: 1.55; }
 pre { white-space: pre-wrap; font: inherit; margin: 0; }
+.module-meta { color: #5f6368; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
-.panel { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 18px; }
-.chapter-list { display: grid; gap: 8px; }
-button { border: 1px solid #c6ccd6; background: #fff; border-radius: 6px; padding: 9px 11px; cursor: pointer; font: inherit; }
-.chapter-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
-button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
-.toc-number { color: #5f6368; font-variant-numeric: tabular-nums; }
-.item { border-top: 1px solid #e4e7ec; padding: 14px 0; }
-.item:first-child { border-top: 0; }
+.panel { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 20px; }
+.chapter-list { display: grid; gap: 10px; }
+.toc-entry { border: 1px solid #c6ccd6; border-radius: 8px; background: #fff; overflow: hidden; }
+.toc-entry.active { border-color: #1a73e8; box-shadow: 0 0 0 1px #1a73e8 inset; }
+button { border: 0; background: transparent; cursor: pointer; font: inherit; }
+.chapter-list button { width: 100%; text-align: left; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; padding: 12px; }
+.chapter-list button:hover { background: #f6f9ff; }
+.toc-number { color: #5f6368; font-variant-numeric: tabular-nums; font-weight: 700; }
+.toc-title { display: block; font-weight: 700; }
+.toc-meta { display: block; color: #5f6368; font-size: 13px; margin-top: 3px; }
+.toc-sections { display: none; border-top: 1px solid #d8dde6; background: #f8fafc; padding: 8px 10px 10px 56px; }
+.toc-entry.active .toc-sections { display: grid; gap: 6px; }
+.toc-sections a { color: #3c4043; text-decoration: none; font-size: 14px; line-height: 1.35; }
+.toc-sections a:hover { color: #1a73e8; text-decoration: underline; }
+.content-panel { padding: 0; overflow: hidden; }
+.chapter-hero { border-bottom: 1px solid #d8dde6; background: #f8fafc; padding: 22px 24px; }
+.chapter-kicker, .section-kicker { color: #5f6368; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.chapter-body { padding: 22px 24px 24px; }
+.item { border-left: 4px solid #d8dde6; padding: 0 0 0 16px; margin-top: 22px; }
+.item:first-child { margin-top: 0; }
+.section-meta { color: #5f6368; font-size: 14px; margin-bottom: 8px; }
+.quiz { border-left-color: #1a73e8; }
 .muted { color: #5f6368; }
 .hidden { display: none; }
 .video { display: inline-block; margin-top: 8px; color: #1a73e8; text-decoration: none; }
-.quiz-option { display: block; width: auto; min-width: 220px; margin: 8px 0; text-align: left; cursor: default; }
+.quiz-option { display: block; width: auto; min-width: 220px; margin: 8px 0; border: 1px solid #c6ccd6; border-radius: 6px; padding: 9px 11px; text-align: left; cursor: default; }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } main { padding: 20px 14px; } }
 </style>
 </head>
@@ -34,7 +49,7 @@ button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
 <main>
 <header>
 <h1>{{.Title}}</h1>
-<div class="muted">{{.Level}}</div>
+<div class="module-meta">{{.Level}}</div>
 {{if .Description}}<pre>{{.Description}}</pre>{{end}}
 </header>
 <section class="layout">
@@ -42,23 +57,40 @@ button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
 <h2>Chapters</h2>
 <div class="chapter-list">
 {{range $i, $chapter := .Chapters}}
-<button type="button" data-target="chapter-{{$i}}"{{if eq $i 0}} class="active"{{end}}>
+<div class="toc-entry{{if eq $i 0}} active{{end}}" data-entry="chapter-{{$i}}">
+<button type="button" data-target="chapter-{{$i}}">
 <span class="toc-number">{{add1 $i}}.</span>
-<span>{{$chapter.Title}}</span>
+<span>
+<span class="toc-title">{{$chapter.Title}}</span>
+<span class="toc-meta">{{len $chapter.Sections}} section{{if ne (len $chapter.Sections) 1}}s{{end}}</span>
+</span>
 </button>
+{{if $chapter.Sections}}
+<div class="toc-sections">
+{{range $sectionIndex, $section := $chapter.Sections}}
+<a href="#chapter-{{$i}}-section-{{$sectionIndex}}">{{add1 $sectionIndex}}. {{$section.Title}}</a>
+{{end}}
+</div>
+{{end}}
+</div>
 {{end}}
 </div>
 </nav>
-<article class="panel">
+<article class="panel content-panel">
 {{range $i, $chapter := .Chapters}}
 <section id="chapter-{{$i}}" class="chapter-detail{{if ne $i 0}} hidden{{end}}">
+<div class="chapter-hero">
+<div class="chapter-kicker">Chapter {{add1 $i}}</div>
 <h2>{{add1 $i}}. {{$chapter.Title}}</h2>
 {{if $chapter.Description}}<pre>{{$chapter.Description}}</pre>{{end}}
 {{if $chapter.BannerVideo}}<a class="video" href="{{$chapter.BannerVideo}}">Video link</a>{{end}}
-{{range $section := $chapter.Sections}}
-<div class="item">
+</div>
+<div class="chapter-body">
+{{range $sectionIndex, $section := $chapter.Sections}}
+<div class="item" id="chapter-{{$i}}-section-{{$sectionIndex}}">
+<div class="section-kicker">Section {{add1 $sectionIndex}}</div>
 <h3>{{$section.Title}}</h3>
-{{if $section.EstimatedDuration}}<div class="muted">{{$section.EstimatedDuration}}</div>{{end}}
+{{if $section.EstimatedDuration}}<div class="section-meta">{{$section.EstimatedDuration}}</div>{{end}}
 {{if $section.Description}}<pre>{{$section.Description}}</pre>{{end}}
 {{if $section.Video}}<a class="video" href="{{$section.Video}}">Video link</a>{{end}}
 </div>
@@ -77,7 +109,8 @@ button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
 </div>
 {{end}}
 {{range $quiz := $chapter.MultipleChoiceAssessments}}
-<div class="item">
+<div class="item quiz">
+<div class="section-kicker">Quiz</div>
 <h3>{{$quiz.Title}}</h3>
 <p>{{$quiz.Description}}</p>
 {{range $question := $quiz.Questions}}
@@ -88,6 +121,7 @@ button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
 {{end}}
 </div>
 {{end}}
+</div>
 </section>
 {{end}}
 </article>
@@ -95,9 +129,10 @@ button:hover, button.active { border-color: #1a73e8; background: #eef4ff; }
 </main>
 <script>
 const buttons = [...document.querySelectorAll('button[data-target]')];
+const entries = [...document.querySelectorAll('.toc-entry')];
 const panels = [...document.querySelectorAll('.chapter-detail')];
 function showChapter(target) {
-  buttons.forEach((button) => button.classList.toggle('active', button.dataset.target === target));
+  entries.forEach((entry) => entry.classList.toggle('active', entry.dataset.entry === target));
   panels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== target));
 }
 buttons.forEach((button) => button.addEventListener('click', () => showChapter(button.dataset.target)));

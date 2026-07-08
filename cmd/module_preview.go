@@ -13,9 +13,9 @@ import (
 )
 
 type modulePreviewOptions struct {
-	addr  string
-	open  bool
-	watch bool
+	addr          string
+	noOpenBrowser bool
+	watch         bool
 }
 
 func newModulePreviewCmd() *cobra.Command {
@@ -29,7 +29,7 @@ func newModulePreviewCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.addr, "addr", "127.0.0.1:0", "Address to listen on")
-	cmd.Flags().BoolVar(&opts.open, "open", false, "Open the preview URL in the default browser")
+	cmd.Flags().BoolVar(&opts.noOpenBrowser, "no-open-browser", false, "Do not open the preview URL in the default browser")
 	cmd.Flags().BoolVar(&opts.watch, "watch", false, "Reload module metadata and markdown on each browser refresh")
 	return cmd
 }
@@ -85,7 +85,7 @@ func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string
 			return err
 		}
 	}
-	if opts.open {
+	if !opts.noOpenBrowser {
 		_ = openBrowser(url)
 	}
 

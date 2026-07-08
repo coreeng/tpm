@@ -80,7 +80,8 @@ jobs:
           rm -f run.out
           tpm lab preview "$LAB_PATH" \
             --chart-uri "$CHART_URI" \
-            --chart-version "$CHART_VERSION" > run.out 2>&1 &
+            --chart-version "$CHART_VERSION" \
+            --no-open-browser > run.out 2>&1 &
           PREVIEW_PID="$!"
           echo "PREVIEW_PID=$PREVIEW_PID" >> "$GITHUB_ENV"
 

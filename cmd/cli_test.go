@@ -106,7 +106,7 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 	if err != nil {
 		t.Fatalf("lab preview --help returned error: %v\n%s", err, output)
 	}
-	for _, want := range []string{"--addr", "--open", "--watch", "--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
+	for _, want := range []string{"--addr", "--no-open-browser", "--watch", "--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("lab preview help does not contain %q:\n%s", want, output)
 		}
@@ -150,7 +150,7 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("module preview --help returned error: %v\n%s", err, output)
 	}
-	for _, want := range []string{"--addr", "--open", "--watch"} {
+	for _, want := range []string{"--addr", "--no-open-browser", "--watch"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("module preview help does not contain %q:\n%s", want, output)
 		}
