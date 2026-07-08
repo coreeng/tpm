@@ -2,7 +2,7 @@ module spring-boot-health-checks-validator
 
 go 1.25.0
 
-toolchain go1.26.4
+toolchain go1.26.5
 
 require (
 	k8s.io/api v0.33.0

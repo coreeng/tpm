@@ -292,7 +292,7 @@ func newLabListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default "+lab.DefaultStateDirHelp+")")
-	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow listing labs against a kubectl context that is not kind-")
+	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow listing labs against a kubectl context that is not a kind cluster")
 	return cmd
 }
 
@@ -328,14 +328,14 @@ func newLabCleanupCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opts.ID, "id", "", "lab run ID")
 	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default "+lab.DefaultStateDirHelp+")")
-	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not kind-")
+	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not a kind cluster")
 	return cmd
 }
 
 func addSharedLabFlags(cmd *cobra.Command, opts *lab.Options) {
 	cmd.Flags().StringVar(&opts.ID, "id", "", "lab run ID (default generated)")
 	cmd.Flags().StringVar(&opts.StateDir, "state-dir", "", "lab state directory (default "+lab.DefaultStateDirHelp+")")
-	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not kind-")
+	cmd.Flags().BoolVar(&opts.AllowNonKind, "allow-non-kind", false, "allow running against a kubectl context that is not a kind cluster")
 }
 
 func openBrowser(url string) error {

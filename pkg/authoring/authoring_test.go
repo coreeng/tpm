@@ -75,6 +75,52 @@ func TestAddMoveRemoveSectionByExplicitIndex(t *testing.T) {
 	}
 }
 
+func TestChapterAuthoringSupportsYamlExtension(t *testing.T) {
+	modulePath := copyAuthoringFixture(t)
+	moduleSource := filepath.Join(modulePath, "module")
+	chapterDirs, err := os.ReadDir(moduleSource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range chapterDirs {
+		if !entry.IsDir() {
+			continue
+		}
+		ymlPath := filepath.Join(moduleSource, entry.Name(), "chapter.yml")
+		if _, err := os.Stat(ymlPath); err != nil {
+			continue
+		}
+		yamlPath := filepath.Join(moduleSource, entry.Name(), "chapter.yaml")
+		if err := os.Rename(ymlPath, yamlPath); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := Move(modulePath, "chapter", Options{From: 2, To: 1}); err != nil {
+		t.Fatalf("Move chapter with chapter.yaml files returned error: %v", err)
+	}
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "01-workloads", "chapter.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "02-cluster-fundamentals", "chapter.yaml"))
+
+	if err := Add(modulePath, "chapter", Options{
+		At:   2,
+		Sets: []string{"code=new-chapter", "title=New Chapter"},
+	}); err != nil {
+		t.Fatalf("Add chapter with chapter.yaml files returned error: %v", err)
+	}
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "01-workloads", "chapter.yaml"))
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "02-new-chapter", "chapter.yml"))
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "03-cluster-fundamentals", "chapter.yaml"))
+
+	if err := Remove(modulePath, "chapter", Options{From: 2, Yes: true, BreakingPolicy: BreakingPolicyWarn}); err != nil {
+		t.Fatalf("Remove chapter with chapter.yaml files returned error: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(moduleSource, "02-new-chapter")); !os.IsNotExist(err) {
+		t.Fatalf("removed chapter still exists or stat failed unexpectedly: %v", err)
+	}
+	assertAuthoringFileExists(t, filepath.Join(moduleSource, "02-cluster-fundamentals", "chapter.yaml"))
+}
+
 func copyAuthoringFixture(t *testing.T) string {
 	t.Helper()
 	src := filepath.Join("..", "builder", "testdata", "simple-module")

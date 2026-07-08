@@ -229,6 +229,35 @@ func TestLabPreviewPayloadRendersSources(t *testing.T) {
 	}
 }
 
+func TestLabPreviewPayloadOmitsRuntimeToken(t *testing.T) {
+	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
+	if err != nil {
+		t.Fatalf("Load example lab returned error: %v", err)
+	}
+	page := newLabPreviewPage(loaded, &lab.RunState{
+		RunID:              "abc123",
+		SystemNamespace:    "lab-abc123-system",
+		WorkspaceNamespace: "lab-abc123-workspace",
+		RegistryURL:        "https://registry.example.test",
+		RegistryUsername:   "learner",
+		RegistryToken:      "secret-token-value",
+	}, nil, nil)
+	rendered, err := json.Marshal(page)
+	if err != nil {
+		t.Fatalf("lab preview payload could not be marshaled: %v", err)
+	}
+	for _, forbidden := range []string{"secret-token-value", "registryToken"} {
+		if strings.Contains(string(rendered), forbidden) {
+			t.Fatalf("lab preview payload exposed %q:\n%s", forbidden, rendered)
+		}
+	}
+	for _, want := range []string{"abc123", "lab-abc123-workspace", "registry.example.test", "learner"} {
+		if !strings.Contains(string(rendered), want) {
+			t.Fatalf("lab preview payload does not contain %q:\n%s", want, rendered)
+		}
+	}
+}
+
 func TestPreviewHandlersServeAppAndJSON(t *testing.T) {
 	mux := http.NewServeMux()
 	if err := registerPreviewHandlers(mux, func() (any, error) {

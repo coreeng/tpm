@@ -210,7 +210,7 @@ tpm module add question modules/kubernetes-101 \
 
 ### Lab Metadata Examples
 
-Module lab metadata points at OCI resources from a separately authored and published lab bundle. Use these commands to place the lab, challenge, and goal metadata in the module source tree. Build and publish the starter and validator images separately, then reference them with `starterImageUri`, `validatorImageUri`, and `imageVersion`.
+Set `starterImageUri`, `validatorImageUri`, and `imageVersion` to the published lab resources you want the module to use.
 
 ```bash
 tpm module add lab modules/kubernetes-101 \

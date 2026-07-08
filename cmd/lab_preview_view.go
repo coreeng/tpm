@@ -27,7 +27,6 @@ type labPreviewRuntime struct {
 	WorkspaceNamespace string `json:"workspaceNamespace"`
 	RegistryURL        string `json:"registryUrl"`
 	RegistryUsername   string `json:"registryUsername"`
-	RegistryToken      string `json:"registryToken"`
 }
 
 type labPreviewChallenge struct {
@@ -95,7 +94,6 @@ func newLabPreviewPage(loaded *lab.Lab, state *lab.RunState, conditions []lab.Pr
 			WorkspaceNamespace: state.WorkspaceNamespace,
 			RegistryURL:        state.RegistryURL,
 			RegistryUsername:   state.RegistryUsername,
-			RegistryToken:      state.RegistryToken,
 		}
 	}
 

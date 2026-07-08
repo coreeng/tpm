@@ -460,7 +460,7 @@ func listResourceDirs(parent, fileName string) ([]resourceDir, error) {
 			continue
 		}
 		path := filepath.Join(parent, entry.Name())
-		if !fileExists(filepath.Join(path, fileName)) && !fileExists(filepath.Join(path, strings.TrimSuffix(fileName, ".yaml")+".yml")) {
+		if !anyResourceFileExists(path, fileName) {
 			continue
 		}
 		dirs = append(dirs, resourceDir{path: path, suffix: suffix(entry.Name())})
@@ -469,6 +469,26 @@ func listResourceDirs(parent, fileName string) ([]resourceDir, error) {
 		return filepath.Base(dirs[i].path) < filepath.Base(dirs[j].path)
 	})
 	return dirs, nil
+}
+
+func anyResourceFileExists(dir, fileName string) bool {
+	for _, name := range resourceFileNames(fileName) {
+		if fileExists(filepath.Join(dir, name)) {
+			return true
+		}
+	}
+	return false
+}
+
+func resourceFileNames(fileName string) []string {
+	switch ext := filepath.Ext(fileName); ext {
+	case ".yaml":
+		return []string{fileName, strings.TrimSuffix(fileName, ext) + ".yml"}
+	case ".yml":
+		return []string{fileName, strings.TrimSuffix(fileName, ext) + ".yaml"}
+	default:
+		return []string{fileName}
+	}
 }
 
 func rewriteResourceDirs(parent string, dirs []resourceDir) error {
@@ -730,7 +750,7 @@ func selectSection(mod *module.Module, chapterIndex, sectionIndex int) (module.S
 		return module.Section{}, err
 	}
 	if sectionIndex < 1 || sectionIndex > len(chapter.Sections) {
-		return module.Section{}, fmt.Errorf("--from %d is outside valid section range 1-%d", sectionIndex, len(chapter.Sections))
+		return module.Section{}, fmt.Errorf("--section %d is outside valid range 1-%d", sectionIndex, len(chapter.Sections))
 	}
 	return chapter.Sections[sectionIndex-1], nil
 }
