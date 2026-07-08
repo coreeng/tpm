@@ -1,9 +1,10 @@
-.PHONY: build test lint security-lint vulncheck verify-tidy check install clean deps help
+.PHONY: build test lint security-lint vulncheck verify-tidy preview-ui-build check install clean deps help
 
 # Binary name
 BINARY_NAME=tpm
 EXAMPLE_VALIDATOR_DIR=examples/spring-boot-health-checks/validator
 GOVULNCHECK=go run golang.org/x/vuln/cmd/govulncheck@latest
+PREVIEW_UI_DIR=web/preview
 
 # Build the binary
 build:
@@ -46,8 +47,14 @@ verify-tidy:
 	go mod tidy -diff
 	cd $(EXAMPLE_VALIDATOR_DIR) && go mod tidy -diff
 
+# Build the React/Tailwind preview UI embedded by the Go binary.
+preview-ui-build:
+	@echo "Building preview UI..."
+	npm --prefix $(PREVIEW_UI_DIR) ci
+	npm --prefix $(PREVIEW_UI_DIR) run build
+
 # Run the full local quality gate before opening or updating a PR.
-check: verify-tidy lint security-lint test vulncheck build
+check: verify-tidy preview-ui-build lint security-lint test vulncheck build
 
 # Install binary to GOPATH
 install:
@@ -66,6 +73,7 @@ deps:
 	go mod download
 	go mod tidy
 	cd $(EXAMPLE_VALIDATOR_DIR) && go mod download && go mod tidy
+	npm --prefix $(PREVIEW_UI_DIR) install
 
 # Display help
 help:
@@ -76,6 +84,7 @@ help:
 	@echo "  security-lint - Run gosec through golangci-lint"
 	@echo "  vulncheck     - Run govulncheck for repo Go modules"
 	@echo "  verify-tidy   - Verify go.mod and go.sum are tidy"
+	@echo "  preview-ui-build - Build the embedded React/Tailwind preview UI"
 	@echo "  check         - Run the full local PR quality gate"
 	@echo "  install       - Install binary to GOPATH/bin"
 	@echo "  clean         - Remove build artifacts"

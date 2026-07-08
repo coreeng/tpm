@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/coreeng/tpm/pkg/builder"
+	"github.com/coreeng/tpm/pkg/module"
 	"github.com/spf13/cobra"
 )
 
@@ -29,35 +30,40 @@ func newModulePreviewCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opts.addr, "addr", "127.0.0.1:0", "Address to listen on")
 	cmd.Flags().BoolVar(&opts.noOpenBrowser, "no-open-browser", false, "Do not open the preview URL in the default browser")
-	cmd.Flags().BoolVar(&opts.watch, "watch", false, "Reload module metadata and markdown on each browser refresh")
+	cmd.Flags().BoolVar(&opts.watch, "watch", false, "Reload module metadata and markdown when source files change")
 	return cmd
 }
 
 func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string, opts *modulePreviewOptions) error {
 	var loaded *modulePreviewPage
 	var err error
+	var watchRoots []string
 	if !opts.watch {
 		loaded, err = compilePreviewModule(modulePath)
+		if err != nil {
+			return err
+		}
+	} else {
+		watchRoots, err = modulePreviewWatchRoots(modulePath)
 		if err != nil {
 			return err
 		}
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	if err := registerPreviewHandlers(mux, func() (any, error) {
 		current := loaded
 		if opts.watch {
 			var err error
 			current, err = compilePreviewModule(modulePath)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return nil, err
 			}
 		}
-		if err := modulePreviewTemplate.Execute(w, current); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
+		return current, nil
+	}, watchRoots); err != nil {
+		return err
+	}
 
 	listener, err := net.Listen("tcp", opts.addr)
 	if err != nil {
@@ -80,7 +86,7 @@ func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string
 		return err
 	}
 	if opts.watch {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading module metadata and markdown on refresh"); err != nil {
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading module metadata and markdown when source files change"); err != nil {
 			return err
 		}
 	}
@@ -106,4 +112,10 @@ func compilePreviewModule(modulePath string) (*modulePreviewPage, error) {
 	return newModulePreviewPage(mod), nil
 }
 
-var modulePreviewTemplate = mustPreviewTemplate("module_preview.tmpl")
+func modulePreviewWatchRoots(modulePath string) ([]string, error) {
+	resolved, err := module.ResolvePath(modulePath)
+	if err != nil {
+		return nil, err
+	}
+	return []string{resolved.SourcePath}, nil
+}

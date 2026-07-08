@@ -1,0 +1,4 @@
+code: control-plane-and-nodes
+title: Control plane and nodes
+shortDescription: Identify the API server, control plane, and worker node responsibilities.
+estimatedDuration: 18m

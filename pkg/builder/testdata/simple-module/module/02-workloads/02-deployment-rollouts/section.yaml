@@ -1,0 +1,4 @@
+code: deployment-rollouts
+title: Deployment rollouts
+shortDescription: Understand how Deployments update Pods while preserving availability.
+estimatedDuration: 18m

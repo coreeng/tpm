@@ -20,14 +20,9 @@ func Status(ctx context.Context, opts Options) (string, error) {
 		return "", err
 	}
 
-	output, err := runner.Output(ctx, "kubectl", "get", "pods", "-n", state.SystemNamespace, "-l", "app.kubernetes.io/component=validator", "-o", "json")
+	pods, err := validatorPods(ctx, runner, *state)
 	if err != nil {
-		return "", fmt.Errorf("get lab validator pods: %w", err)
-	}
-
-	var pods kubectlPods
-	if err := json.Unmarshal(output, &pods); err != nil {
-		return "", fmt.Errorf("parse lab validator pods: %w", err)
+		return "", err
 	}
 	if len(pods.Items) == 0 {
 		return renderFailedProvisioningStatus(state), nil
@@ -58,6 +53,54 @@ func Status(ctx context.Context, opts Options) (string, error) {
 		renderPodConditions(&b, podConditions)
 	}
 	return b.String(), nil
+}
+
+type ProgressCondition struct {
+	Type    string `json:"type"`
+	Status  string `json:"status"`
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+func ProgressConditionsForState(ctx context.Context, runner Runner, state RunState) ([]ProgressCondition, error) {
+	if runner == nil {
+		runner = ExecRunner{}
+	}
+	pods, err := validatorPods(ctx, runner, state)
+	if err != nil {
+		return nil, err
+	}
+	if len(pods.Items) == 0 {
+		return nil, nil
+	}
+	if len(pods.Items) != 1 {
+		return nil, fmt.Errorf("expected one lab validator pod in namespace %q, found %d", state.SystemNamespace, len(pods.Items))
+	}
+
+	conditions := make([]ProgressCondition, 0, len(pods.Items[0].Status.Conditions))
+	for _, condition := range pods.Items[0].Status.Conditions {
+		if !isLabCondition(condition.Type) {
+			continue
+		}
+		conditions = append(conditions, ProgressCondition(condition))
+	}
+	sort.Slice(conditions, func(i, j int) bool {
+		return conditionSortKey(conditions[i].Type) < conditionSortKey(conditions[j].Type)
+	})
+	return conditions, nil
+}
+
+func validatorPods(ctx context.Context, runner Runner, state RunState) (kubectlPods, error) {
+	output, err := runner.Output(ctx, "kubectl", "get", "pods", "-n", state.SystemNamespace, "-l", "app.kubernetes.io/component=validator", "-o", "json")
+	if err != nil {
+		return kubectlPods{}, fmt.Errorf("get lab validator pods: %w", err)
+	}
+
+	var pods kubectlPods
+	if err := json.Unmarshal(output, &pods); err != nil {
+		return kubectlPods{}, fmt.Errorf("parse lab validator pods: %w", err)
+	}
+	return pods, nil
 }
 
 func renderLabProgressTable(b *strings.Builder, conditions []kubectlPodCondition) error {

@@ -8,6 +8,42 @@ import (
 	"github.com/coreeng/tpm/pkg/pathutil"
 )
 
+type previewSourceRef struct {
+	File     string `json:"file"`
+	Property string `json:"property,omitempty"`
+}
+
+type previewText struct {
+	Value  string            `json:"value"`
+	Source *previewSourceRef `json:"source,omitempty"`
+}
+
+type previewNumber struct {
+	Value  int               `json:"value"`
+	Source *previewSourceRef `json:"source,omitempty"`
+}
+
+func sourcedText(value, path, property string) previewText {
+	return previewText{Value: value, Source: previewSourceRefFor(path, property)}
+}
+
+func sourcedNumber(value int, path, property string) previewNumber {
+	return previewNumber{Value: value, Source: previewSourceRefFor(path, property)}
+}
+
+func previewSourceRefFor(path, property string) *previewSourceRef {
+	label := previewSourceLabel(path)
+	if label == "" {
+		return nil
+	}
+	property = strings.TrimSpace(property)
+	lowerLabel := strings.ToLower(label)
+	if !strings.HasSuffix(lowerLabel, ".yaml") && !strings.HasSuffix(lowerLabel, ".yml") {
+		property = ""
+	}
+	return &previewSourceRef{File: label, Property: property}
+}
+
 func previewSourceLabel(path string) string {
 	path = strings.TrimSpace(path)
 	if path == "" {

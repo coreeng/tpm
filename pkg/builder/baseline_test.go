@@ -132,9 +132,12 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 		t.Error("Expected chapter description to be merged from description.md")
 	}
 
-	// Verify sections
-	if len(chapter.Sections) != 1 {
-		t.Fatalf("Expected 1 section, got %d", len(chapter.Sections))
+	// Verify chapters have intentionally varied section counts.
+	expectedSectionCounts := []int{2, 3, 1}
+	for i, want := range expectedSectionCounts {
+		if got := len(mod.Chapters[i].Sections); got != want {
+			t.Fatalf("Expected chapter %d to have %d section(s), got %d", i+1, want, got)
+		}
 	}
 
 	section := chapter.Sections[0]
@@ -153,5 +156,16 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 	if section.Index != 1 {
 		t.Errorf("Expected section index 1, got %d", section.Index)
+	}
+
+	quiz := mod.Chapters[2].MultipleChoiceAssessments[0]
+	if len(quiz.Questions) != 3 {
+		t.Fatalf("Expected operations quiz to have 3 questions, got %d", len(quiz.Questions))
+	}
+	if quiz.Questions[0].Type != "SINGLE" {
+		t.Errorf("Expected first quiz question to be SINGLE, got %s", quiz.Questions[0].Type)
+	}
+	if quiz.Questions[2].Type != "MULTIPLE" {
+		t.Errorf("Expected third quiz question to be MULTIPLE, got %s", quiz.Questions[2].Type)
 	}
 }

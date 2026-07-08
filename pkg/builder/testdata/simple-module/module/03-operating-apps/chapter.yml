@@ -3,28 +3,40 @@ title: Operating applications
 shortDescription: Inspect application health and troubleshoot common runtime issues.
 isDraft: false
 multipleChoiceAssessments:
-  - code: kubernetes-operations-check
-    title: Kubernetes operations check
-    description: Check the core concepts from this Kubernetes 101 module.
-    passingScore: 70
-    questions:
-      - code: deployment-purpose
-        question: What does a Deployment primarily manage?
-        type: SINGLE
-        options:
-          - text: Rollouts and replicas for Pods
-            correct: true
-          - text: Persistent storage volumes only
-            correct: false
-          - text: External DNS records only
-            correct: false
-      - code: service-purpose
-        question: Why do applications commonly use a Service?
-        type: SINGLE
-        options:
-          - text: To provide a stable network endpoint for changing Pods
-            correct: true
-          - text: To rebuild container images inside the cluster
-            correct: false
-          - text: To replace the Kubernetes API server
-            correct: false
+    - code: kubernetes-operations-check
+      title: Kubernetes operations check
+      description: Check the core concepts from this Kubernetes 101 module.
+      passingScore: 70
+      questions:
+        - code: deployment-purpose
+          question: What does a Deployment primarily manage?
+          type: SINGLE
+          options:
+            - text: Rollouts and replicas for Pods
+              correct: true
+            - text: Persistent storage volumes only
+              correct: false
+            - text: External DNS records only
+              correct: false
+        - code: service-purpose
+          question: Why do applications commonly use a Service?
+          type: SINGLE
+          options:
+            - text: To provide a stable network endpoint for changing Pods
+              correct: true
+            - text: To rebuild container images inside the cluster
+              correct: false
+            - text: To replace the Kubernetes API server
+              correct: false
+        - code: troubleshooting-signals
+          question: Which signals are useful when troubleshooting a Kubernetes workload?
+          type: MULTIPLE
+          options:
+            - text: Object status fields
+              correct: true
+            - text: Kubernetes events
+              correct: true
+            - text: Container logs
+              correct: true
+            - text: Container registry billing records
+              correct: false

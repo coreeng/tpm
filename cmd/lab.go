@@ -129,15 +129,6 @@ type labPreviewOptions struct {
 	watch         bool
 }
 
-type labPreviewPage struct {
-	*lab.Lab
-	State             *lab.RunState
-	Source            string
-	DescriptionSource string
-	TimeLimitSource   string
-	Challenges        []labPreviewChallenge
-}
-
 func newLabPreviewCmd() *cobra.Command {
 	previewOpts := &labPreviewOptions{}
 	runtimeOpts := lab.Options{}
@@ -162,7 +153,7 @@ func newLabPreviewCmd() *cobra.Command {
 	cmd.Flags().DurationVar(&runtimeOpts.CheckInterval, "check-interval", 5*time.Second, "validator check interval")
 	cmd.Flags().StringVar(&previewOpts.addr, "addr", "127.0.0.1:0", "Address to listen on")
 	cmd.Flags().BoolVar(&previewOpts.noOpenBrowser, "no-open-browser", false, "Do not open the preview URL in the default browser")
-	cmd.Flags().BoolVar(&previewOpts.watch, "watch", false, "Reload lab metadata and markdown on each browser refresh")
+	cmd.Flags().BoolVar(&previewOpts.watch, "watch", false, "Reload lab metadata and markdown when source files change")
 	return cmd
 }
 
@@ -192,6 +183,9 @@ func prepareLabRuntimeOptions(cmd *cobra.Command, opts *lab.Options, labPath str
 
 func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Options, previewOpts *labPreviewOptions) error {
 	runtimeOpts.LogWriter = cmd.OutOrStdout()
+	if runtimeOpts.Runner == nil {
+		runtimeOpts.Runner = lab.ExecRunner{}
+	}
 
 	listener, err := net.Listen("tcp", previewOpts.addr)
 	if err != nil {
@@ -210,28 +204,35 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 	}
 
 	var loaded *lab.Lab
+	var watchRoots []string
 	if !previewOpts.watch {
 		loaded, err = lab.Load(state.LabPath)
 		if err != nil {
 			return err
 		}
+	} else {
+		loadedForWatch, err := lab.Load(state.LabPath)
+		if err != nil {
+			return err
+		}
+		watchRoots = labPreviewWatchRoots(loadedForWatch)
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	if err := registerPreviewHandlers(mux, func() (any, error) {
 		current := loaded
 		if previewOpts.watch {
 			var err error
 			current, err = lab.Load(state.LabPath)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return nil, err
 			}
 		}
-		if err := labPreviewTemplate.Execute(w, newLabPreviewPage(current, state)); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
+		conditions, statusErr := lab.ProgressConditionsForState(ctx, runtimeOpts.Runner, *state)
+		return newLabPreviewPage(current, state, conditions, statusErr), nil
+	}, watchRoots); err != nil {
+		return err
+	}
 
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
@@ -246,7 +247,7 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 		return err
 	}
 	if previewOpts.watch {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading lab metadata and markdown on refresh"); err != nil {
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading lab metadata and markdown when source files change"); err != nil {
 			return err
 		}
 	}
@@ -262,6 +263,17 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 	case err := <-errCh:
 		return err
 	}
+}
+
+func labPreviewWatchRoots(loaded *lab.Lab) []string {
+	if loaded == nil {
+		return nil
+	}
+	roots := []string{loaded.RootPath}
+	if loaded.RuntimePath != "" && loaded.RuntimePath != loaded.RootPath {
+		roots = append(roots, loaded.RuntimePath)
+	}
+	return roots
 }
 
 func newLabListCmd() *cobra.Command {
@@ -339,5 +351,3 @@ func openBrowser(url string) error {
 		return exec.Command("xdg-open", url).Start()
 	}
 }
-
-var labPreviewTemplate = mustPreviewTemplate("lab_preview.tmpl")

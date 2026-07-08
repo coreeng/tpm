@@ -62,9 +62,12 @@ func TestBuild_SimpleModule(t *testing.T) {
 		t.Errorf("Expected chapter index 1, got %d", ch.Index)
 	}
 
-	// Verify section
-	if len(ch.Sections) != 1 {
-		t.Fatalf("Expected 1 section, got %d", len(ch.Sections))
+	// Verify the fixture intentionally exercises uneven chapter sizes.
+	expectedSectionCounts := []int{2, 3, 1}
+	for i, want := range expectedSectionCounts {
+		if got := len(mod.Chapters[i].Sections); got != want {
+			t.Fatalf("Expected chapter %d to have %d section(s), got %d", i+1, want, got)
+		}
 	}
 
 	sec := ch.Sections[0]
@@ -78,6 +81,17 @@ func TestBuild_SimpleModule(t *testing.T) {
 
 	if ch.IsDraft {
 		t.Errorf("Expected chapter isDraft to be false, got true")
+	}
+
+	quiz := mod.Chapters[2].MultipleChoiceAssessments[0]
+	if len(quiz.Questions) != 3 {
+		t.Fatalf("Expected operations quiz to have 3 questions, got %d", len(quiz.Questions))
+	}
+	if quiz.Questions[0].Type != "SINGLE" {
+		t.Errorf("Expected first quiz question to be SINGLE, got %s", quiz.Questions[0].Type)
+	}
+	if quiz.Questions[2].Type != "MULTIPLE" {
+		t.Errorf("Expected third quiz question to be MULTIPLE, got %s", quiz.Questions[2].Type)
 	}
 
 	t.Logf("✓ Build test passed successfully")

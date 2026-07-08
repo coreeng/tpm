@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -145,7 +148,7 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 	}
 }
 
-func TestModulePreviewHelpAndTemplate(t *testing.T) {
+func TestModulePreviewHelpAndPayload(t *testing.T) {
 	output, err := executeRootCommand("module", "preview", "--help")
 	if err != nil {
 		t.Fatalf("module preview --help returned error: %v\n%s", err, output)
@@ -161,15 +164,12 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("compilePreviewModule fixture returned error: %v", err)
 	}
-	var rendered bytes.Buffer
-	if err := modulePreviewTemplate.Execute(&rendered, page); err != nil {
-		t.Fatalf("module preview template returned error: %v", err)
+	rendered, err := json.Marshal(page)
+	if err != nil {
+		t.Fatalf("module preview payload could not be marshaled: %v", err)
 	}
 	for _, want := range []string{
 		"Kubernetes 101",
-		`<span class="toc-number">1.</span>`,
-		`<span class="toc-number">2.</span>`,
-		`<span class="toc-number">3.</span>`,
 		"Cluster fundamentals",
 		"Pods, Deployments, and Services",
 		"Kubernetes operations check",
@@ -179,31 +179,80 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 		"module/01-cluster-fundamentals/chapter.yml",
 		"module/01-cluster-fundamentals/01-what-is-kubernetes/section.yaml",
 		"module/01-cluster-fundamentals/01-what-is-kubernetes/description.md",
+		"multipleChoiceAssessments[].questions[].question",
 	} {
-		if !strings.Contains(rendered.String(), want) {
-			t.Fatalf("module preview render does not contain %q:\n%s", want, rendered.String())
+		if !strings.Contains(string(rendered), want) {
+			t.Fatalf("module preview payload does not contain %q:\n%s", want, rendered)
 		}
 	}
 }
 
-func TestLabPreviewTemplateRendersSources(t *testing.T) {
+func TestLabPreviewPayloadRendersSources(t *testing.T) {
 	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
 	if err != nil {
 		t.Fatalf("Load example lab returned error: %v", err)
 	}
-	var rendered bytes.Buffer
-	if err := labPreviewTemplate.Execute(&rendered, newLabPreviewPage(loaded, nil)); err != nil {
-		t.Fatalf("lab preview template returned error: %v", err)
+	rendered, err := json.Marshal(newLabPreviewPage(loaded, nil, []lab.ProgressCondition{
+		{
+			Type:    "IAG_HealthChecksAdded_AppDeployedAndReady",
+			Status:  "True",
+			Reason:  "Satisfied",
+			Message: "Deployment has a Ready replica",
+		},
+		{
+			Type:    "IAC_HealthChecksAdded",
+			Status:  "False",
+			Reason:  "WaitingForGoals",
+			Message: "Complete all goals",
+		},
+		{
+			Type:    "IA_Completed",
+			Status:  "False",
+			Reason:  "Incomplete",
+			Message: "Lab is still in progress",
+		},
+	}, nil))
+	if err != nil {
+		t.Fatalf("lab preview payload could not be marshaled: %v", err)
 	}
 	for _, want := range []string{
 		"Spring Boot Health Checks",
 		"Deploy the app and reach Ready",
 		"lab.yaml",
-		`class="source-badge"`,
+		"challenges[].goals[].title",
+		`"label":"Complete"`,
+		`"label":"Incomplete"`,
 	} {
-		if !strings.Contains(rendered.String(), want) {
-			t.Fatalf("lab preview render does not contain %q:\n%s", want, rendered.String())
+		if !strings.Contains(string(rendered), want) {
+			t.Fatalf("lab preview payload does not contain %q:\n%s", want, rendered)
 		}
+	}
+}
+
+func TestPreviewHandlersServeAppAndJSON(t *testing.T) {
+	mux := http.NewServeMux()
+	if err := registerPreviewHandlers(mux, func() (any, error) {
+		return map[string]string{"kind": "test"}, nil
+	}, nil); err != nil {
+		t.Fatalf("registerPreviewHandlers returned error: %v", err)
+	}
+
+	indexRecorder := httptest.NewRecorder()
+	mux.ServeHTTP(indexRecorder, httptest.NewRequest(http.MethodGet, "/", nil))
+	if indexRecorder.Code != http.StatusOK {
+		t.Fatalf("index status = %d, body:\n%s", indexRecorder.Code, indexRecorder.Body.String())
+	}
+	if !strings.Contains(indexRecorder.Body.String(), `<div id="root">`) {
+		t.Fatalf("index did not contain React root:\n%s", indexRecorder.Body.String())
+	}
+
+	apiRecorder := httptest.NewRecorder()
+	mux.ServeHTTP(apiRecorder, httptest.NewRequest(http.MethodGet, "/api/preview", nil))
+	if apiRecorder.Code != http.StatusOK {
+		t.Fatalf("api status = %d, body:\n%s", apiRecorder.Code, apiRecorder.Body.String())
+	}
+	if !strings.Contains(apiRecorder.Body.String(), `"kind":"test"`) {
+		t.Fatalf("api did not return preview JSON:\n%s", apiRecorder.Body.String())
 	}
 }
 
