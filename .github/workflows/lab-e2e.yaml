@@ -2,8 +2,8 @@ name: Lab E2E
 
 # Exercises the spring-boot-health-checks example lab end-to-end against a kind
 # cluster using the published OCI lab-runtime chart:
-#   tpm lab run -> assert goals RED -> negative control (starter stays RED)
-#   -> deploy solution -> poll until GREEN -> cleanup.
+#   tpm lab start -> assert goals RED -> negative control (starter stays RED)
+#   -> deploy solution -> poll until GREEN -> stop.
 # This gives the lab teeth: a rubber-stamping validator, a broken probe path, or a
 # non-bootable image all fail the job.
 
@@ -74,10 +74,10 @@ jobs:
           kubectl cluster-info
           tpm --version
 
-      - name: Start lab (tpm lab run)
+      - name: Start lab (tpm lab start)
         run: |
           set -euo pipefail
-          tpm lab run "$LAB_PATH" \
+          tpm lab start "$LAB_PATH" \
             --chart-uri "$CHART_URI" \
             --chart-version "$CHART_VERSION" | tee run.out
 
@@ -145,6 +145,6 @@ jobs:
           echo "=== validator logs ==="
           kubectl logs -n "$SYSTEM_NS" -l app.kubernetes.io/component=validator --tail=200 || true
 
-      - name: Cleanup lab
+      - name: Stop lab
         if: always()
-        run: tpm lab cleanup --id "$RUN_ID" || true
+        run: tpm lab stop --id "$RUN_ID" || true

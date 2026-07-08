@@ -91,7 +91,7 @@ full lab layout and a `validator/` that checks the learner's running workload.
 Run it locally against a kind cluster (the lab runtime is published as an OCI Helm chart):
 
 ```bash
-tpm lab run examples/spring-boot-health-checks \
+tpm lab start examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
@@ -102,6 +102,7 @@ tpm lab run examples/spring-boot-health-checks \
 ## Development
 
 ```bash
+make check    # Run the full local PR quality gate
 make build    # Build the tpm binary
 make test     # Run tests
 make lint     # Run golangci-lint (falls back to go vet)
