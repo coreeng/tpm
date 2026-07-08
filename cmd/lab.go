@@ -187,6 +187,9 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 		runtimeOpts.Runner = lab.ExecRunner{}
 	}
 
+	if err := validateLocalPreviewAddress(previewOpts.addr); err != nil {
+		return err
+	}
 	listener, err := net.Listen("tcp", previewOpts.addr)
 	if err != nil {
 		return err
@@ -263,6 +266,24 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 	case err := <-errCh:
 		return err
 	}
+}
+
+func validateLocalPreviewAddress(addr string) error {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return err
+	}
+	if _, err := net.LookupPort("tcp", port); err != nil {
+		return err
+	}
+	if host == "localhost" {
+		return nil
+	}
+	ip := net.ParseIP(host)
+	if ip != nil && ip.IsLoopback() {
+		return nil
+	}
+	return fmt.Errorf("lab preview address must bind to localhost or a loopback IP because runtime credentials are shown in the local preview; got %q", addr)
 }
 
 func labPreviewWatchRoots(loaded *lab.Lab) []string {

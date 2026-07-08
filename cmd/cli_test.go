@@ -229,7 +229,7 @@ func TestLabPreviewPayloadRendersSources(t *testing.T) {
 	}
 }
 
-func TestLabPreviewPayloadOmitsRuntimeToken(t *testing.T) {
+func TestLabPreviewPayloadIncludesRuntimeToken(t *testing.T) {
 	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
 	if err != nil {
 		t.Fatalf("Load example lab returned error: %v", err)
@@ -246,12 +246,7 @@ func TestLabPreviewPayloadOmitsRuntimeToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("lab preview payload could not be marshaled: %v", err)
 	}
-	for _, forbidden := range []string{"secret-token-value", "registryToken"} {
-		if strings.Contains(string(rendered), forbidden) {
-			t.Fatalf("lab preview payload exposed %q:\n%s", forbidden, rendered)
-		}
-	}
-	for _, want := range []string{"abc123", "lab-abc123-workspace", "registry.example.test", "learner"} {
+	for _, want := range []string{"abc123", "lab-abc123-workspace", "registry.example.test", "learner", "secret-token-value", "registryToken"} {
 		if !strings.Contains(string(rendered), want) {
 			t.Fatalf("lab preview payload does not contain %q:\n%s", want, rendered)
 		}
@@ -310,6 +305,11 @@ func TestLabPreviewValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
 			name: "invalid preview address",
 			args: []string{"lab", "preview", "does-not-exist", "--chart-uri", "oci://example.com/chart", "--addr", "127.0.0.1:99999"},
 			want: "invalid port",
+		},
+		{
+			name: "non-local preview address",
+			args: []string{"lab", "preview", "does-not-exist", "--chart-uri", "oci://example.com/chart", "--addr", "0.0.0.0:0"},
+			want: "lab preview address must bind to localhost or a loopback IP",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

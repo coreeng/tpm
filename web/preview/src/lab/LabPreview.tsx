@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Clock,
   FlaskConical,
+  KeyRound,
   Server,
   Target,
   XCircle,
@@ -158,6 +159,8 @@ function LabCompletionBadge({
 }
 
 function RuntimePanel({ runtime }: { runtime: NonNullable<LabPreviewPayload["runtime"]> }) {
+  const [revealToken, setRevealToken] = useState(false);
+
   return (
     <details className="overflow-hidden rounded-lg border border-cyan-200 bg-white shadow-sm">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-cyan-700 px-5 py-4 text-base font-semibold text-white sm:text-sm">
@@ -173,6 +176,24 @@ function RuntimePanel({ runtime }: { runtime: NonNullable<LabPreviewPayload["run
         <RuntimeValue label="Workspace namespace" value={runtime.workspaceNamespace} />
         <RuntimeValue label="Registry" value={runtime.registryUrl} />
         <RuntimeValue label="Registry username" value={runtime.registryUsername} />
+        <div className="rounded-md border border-slate-200 bg-white p-3">
+          <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <KeyRound className="size-3.5" />
+            <span>Registry token</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <code className="min-w-0 truncate font-mono text-xs text-slate-800">
+              {revealToken ? runtime.registryToken : "••••••••••••••••"}
+            </code>
+            <button
+              className="rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => setRevealToken((current) => !current)}
+              type="button"
+            >
+              {revealToken ? "Hide" : "Reveal"}
+            </button>
+          </div>
+        </div>
       </div>
     </details>
   );

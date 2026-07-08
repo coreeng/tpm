@@ -125,6 +125,7 @@ export interface LabRuntime {
   workspaceNamespace: string;
   registryUrl: string;
   registryUsername: string;
+  registryToken: string;
 }
 
 export interface LabChallenge {
