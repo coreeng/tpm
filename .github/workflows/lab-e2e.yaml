@@ -77,11 +77,12 @@ jobs:
       - name: Preview lab (starts runtime)
         run: |
           set -euo pipefail
-          rm -f run.out
+          rm -f run.out run-info.json
           tpm lab preview "$LAB_PATH" \
             --chart-uri "$CHART_URI" \
             --chart-version "$CHART_VERSION" \
-            --no-open-browser > run.out 2>&1 &
+            --no-open-browser \
+            --run-info-json run-info.json > run.out 2>&1 &
           PREVIEW_PID="$!"
           echo "PREVIEW_PID=$PREVIEW_PID" >> "$GITHUB_ENV"
 
@@ -97,14 +98,12 @@ jobs:
             sleep 1
           done
           grep -q '^Lab preview:' run.out
+          test -s run-info.json
           cat run.out
 
-          RUN_ID="$(grep -oE 'run id [0-9a-fA-F-]+' run.out | awk '{print $3}')"
-          SYSTEM_NS="$(grep -oE '^System namespace: .+' run.out | awk '{print $3}')"
-          WORKSPACE_NS="$(grep -oE '^Workspace namespace: .+' run.out | awk '{print $3}')"
-          # Fall back to the documented naming if parsing ever changes.
-          : "${SYSTEM_NS:=lab-${RUN_ID}-system}"
-          : "${WORKSPACE_NS:=lab-${RUN_ID}-workspace}"
+          RUN_ID="$(jq -r '.runId' run-info.json)"
+          SYSTEM_NS="$(jq -r '.systemNamespace' run-info.json)"
+          WORKSPACE_NS="$(jq -r '.workspaceNamespace' run-info.json)"
           test -n "$RUN_ID"
           echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
           echo "SYSTEM_NS=$SYSTEM_NS" >> "$GITHUB_ENV"

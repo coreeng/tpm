@@ -57,7 +57,7 @@ challenges:
 func TestDetectModuleBackedLabFromRuntimePath(t *testing.T) {
 	repo := t.TempDir()
 	metadataRoot := filepath.Join(repo, "path-to-production", "module", "01-chapter", "assessments", "01-lab")
-	writeFile(t, filepath.Join(metadataRoot, "assessment.yaml"), `title: Module Backed Lab
+	writeFile(t, filepath.Join(metadataRoot, "assessment.yml"), `title: Module Backed Lab
 code: module-backed-lab
 timeLimit: 45m
 `)
@@ -93,8 +93,8 @@ goals:
 	if loaded.RuntimePath != runtimeRoot {
 		t.Errorf("RuntimePath = %q, want %q", loaded.RuntimePath, runtimeRoot)
 	}
-	if loaded.MetadataPath != filepath.Join(metadataRoot, "assessment.yaml") {
-		t.Errorf("MetadataPath = %q, want assessment.yaml path", loaded.MetadataPath)
+	if loaded.MetadataPath != filepath.Join(metadataRoot, "assessment.yml") {
+		t.Errorf("MetadataPath = %q, want assessment.yml path", loaded.MetadataPath)
 	}
 	if loaded.Title != "Module Backed Lab" {
 		t.Errorf("Title = %q, want Module Backed Lab", loaded.Title)

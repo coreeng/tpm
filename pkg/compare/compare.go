@@ -181,49 +181,68 @@ func collectSourcePath(path string) (map[string]CodeInfo, error) {
 		return nil, err
 	}
 	codes := map[string]CodeInfo{}
-	collectSourceModule(codes, mod, resolved)
+	if err := collectSourceModule(codes, mod, resolved); err != nil {
+		return nil, err
+	}
 	return codes, nil
 }
 
-func collectSourceModule(codes map[string]CodeInfo, mod *module.Module, resolved module.ResolvedPath) {
+func collectSourceModule(codes map[string]CodeInfo, mod *module.Module, resolved module.ResolvedPath) error {
 	if mod.Code != "" {
-		codes[mod.Code] = CodeInfo{Code: mod.Code, EntityType: "module", FilePath: resolved.ModuleFilePath}
+		if err := addCode(codes, CodeInfo{Code: mod.Code, EntityType: "module", FilePath: resolved.ModuleFilePath}); err != nil {
+			return err
+		}
 	}
 	for _, chapter := range mod.Chapters {
 		if chapter.Code != "" {
-			codes[chapter.Code] = CodeInfo{Code: chapter.Code, EntityType: "chapter", FilePath: chapter.FilePath, ParentCode: mod.Code, ParentType: "module"}
+			if err := addCode(codes, CodeInfo{Code: chapter.Code, EntityType: "chapter", FilePath: chapter.FilePath, ParentCode: mod.Code, ParentType: "module"}); err != nil {
+				return err
+			}
 		}
 		for _, section := range chapter.Sections {
 			if section.Code != "" {
-				codes[section.Code] = CodeInfo{Code: section.Code, EntityType: "section", FilePath: section.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: section.Code, EntityType: "section", FilePath: section.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return err
+				}
 			}
 		}
 		for _, assessment := range chapter.Assessments {
 			if assessment.Code != "" {
-				codes[assessment.Code] = CodeInfo{Code: assessment.Code, EntityType: "lab", FilePath: assessment.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: assessment.Code, EntityType: "lab", FilePath: assessment.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return err
+				}
 			}
 			for _, challenge := range assessment.Challenges {
 				if challenge.Code != "" {
-					codes[challenge.Code] = CodeInfo{Code: challenge.Code, EntityType: "challenge", FilePath: challenge.FilePath, ParentCode: assessment.Code, ParentType: "lab"}
+					if err := addCode(codes, CodeInfo{Code: challenge.Code, EntityType: "challenge", FilePath: challenge.FilePath, ParentCode: assessment.Code, ParentType: "lab"}); err != nil {
+						return err
+					}
 				}
 				for _, goal := range challenge.Goals {
 					if goal.Code != "" {
-						codes[goal.Code] = CodeInfo{Code: goal.Code, EntityType: "goal", FilePath: challenge.FilePath, ParentCode: challenge.Code, ParentType: "challenge"}
+						if err := addCode(codes, CodeInfo{Code: goal.Code, EntityType: "goal", FilePath: challenge.FilePath, ParentCode: challenge.Code, ParentType: "challenge"}); err != nil {
+							return err
+						}
 					}
 				}
 			}
 		}
 		for _, quiz := range chapter.MultipleChoiceAssessments {
 			if quiz.Code != "" {
-				codes[quiz.Code] = CodeInfo{Code: quiz.Code, EntityType: "quiz", FilePath: chapter.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: quiz.Code, EntityType: "quiz", FilePath: chapter.FilePath, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return err
+				}
 			}
 			for _, question := range quiz.Questions {
 				if question.Code != "" {
-					codes[question.Code] = CodeInfo{Code: question.Code, EntityType: "question", FilePath: chapter.FilePath, ParentCode: quiz.Code, ParentType: "quiz"}
+					if err := addCode(codes, CodeInfo{Code: question.Code, EntityType: "question", FilePath: chapter.FilePath, ParentCode: quiz.Code, ParentType: "quiz"}); err != nil {
+						return err
+					}
 				}
 			}
 		}
 	}
+	return nil
 }
 
 func collectBuiltFile(path string) (map[string]CodeInfo, error) {
@@ -238,44 +257,79 @@ func collectBuiltFile(path string) (map[string]CodeInfo, error) {
 	}
 	codes := map[string]CodeInfo{}
 	if mod.Code != "" {
-		codes[mod.Code] = CodeInfo{Code: mod.Code, EntityType: "module", FilePath: path}
+		if err := addCode(codes, CodeInfo{Code: mod.Code, EntityType: "module", FilePath: path}); err != nil {
+			return nil, err
+		}
 	}
 	for _, chapter := range mod.Chapters {
 		if chapter.Code != "" {
-			codes[chapter.Code] = CodeInfo{Code: chapter.Code, EntityType: "chapter", FilePath: path, ParentCode: mod.Code, ParentType: "module"}
+			if err := addCode(codes, CodeInfo{Code: chapter.Code, EntityType: "chapter", FilePath: path, ParentCode: mod.Code, ParentType: "module"}); err != nil {
+				return nil, err
+			}
 		}
 		for _, section := range chapter.Sections {
 			if section.Code != "" {
-				codes[section.Code] = CodeInfo{Code: section.Code, EntityType: "section", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: section.Code, EntityType: "section", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return nil, err
+				}
 			}
 		}
 		for _, assessment := range chapter.Assessments {
 			if assessment.Code != "" {
-				codes[assessment.Code] = CodeInfo{Code: assessment.Code, EntityType: "lab", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: assessment.Code, EntityType: "lab", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return nil, err
+				}
 			}
 			for _, challenge := range assessment.Challenges {
 				if challenge.Code != "" {
-					codes[challenge.Code] = CodeInfo{Code: challenge.Code, EntityType: "challenge", FilePath: path, ParentCode: assessment.Code, ParentType: "lab"}
+					if err := addCode(codes, CodeInfo{Code: challenge.Code, EntityType: "challenge", FilePath: path, ParentCode: assessment.Code, ParentType: "lab"}); err != nil {
+						return nil, err
+					}
 				}
 				for _, goal := range challenge.Goals {
 					if goal.Code != "" {
-						codes[goal.Code] = CodeInfo{Code: goal.Code, EntityType: "goal", FilePath: path, ParentCode: challenge.Code, ParentType: "challenge"}
+						if err := addCode(codes, CodeInfo{Code: goal.Code, EntityType: "goal", FilePath: path, ParentCode: challenge.Code, ParentType: "challenge"}); err != nil {
+							return nil, err
+						}
 					}
 				}
 			}
 		}
 		for _, quiz := range chapter.MultipleChoiceAssessments {
 			if quiz.Code != "" {
-				codes[quiz.Code] = CodeInfo{Code: quiz.Code, EntityType: "quiz", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}
+				if err := addCode(codes, CodeInfo{Code: quiz.Code, EntityType: "quiz", FilePath: path, ParentCode: chapter.Code, ParentType: "chapter"}); err != nil {
+					return nil, err
+				}
 			}
 			for _, question := range quiz.Questions {
 				if question.Code != "" {
-					codes[question.Code] = CodeInfo{Code: question.Code, EntityType: "question", FilePath: path, ParentCode: quiz.Code, ParentType: "quiz"}
+					if err := addCode(codes, CodeInfo{Code: question.Code, EntityType: "question", FilePath: path, ParentCode: quiz.Code, ParentType: "quiz"}); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
 	}
 	return codes, nil
+}
+
+func addCode(codes map[string]CodeInfo, info CodeInfo) error {
+	if existing, ok := codes[info.Code]; ok {
+		return fmt.Errorf("duplicate code %q: %s conflicts with %s; compare requires unique codes", info.Code, describeCodeInfo(existing), describeCodeInfo(info))
+	}
+	codes[info.Code] = info
+	return nil
+}
+
+func describeCodeInfo(info CodeInfo) string {
+	location := info.FilePath
+	if location == "" {
+		location = "<unknown file>"
+	}
+	if info.ParentCode == "" {
+		return fmt.Sprintf("%s in %s", info.EntityType, location)
+	}
+	return fmt.Sprintf("%s in %s under %s %q", info.EntityType, location, info.ParentType, info.ParentCode)
 }
 
 func looksLikeBuiltArtifact(path string) bool {

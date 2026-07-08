@@ -20,9 +20,6 @@ type Chapter struct {
 	Index                     int                        `yaml:"-" json:"-"`
 	Title                     string                     `yaml:"title" json:"title"`
 	Description               string                     `yaml:"-" json:"-"`
-	ShortDescription          string                     `yaml:"shortDescription" json:"shortDescription,omitempty"`
-	BannerImage               string                     `yaml:"bannerImage" json:"bannerImage,omitempty"`
-	BannerVideo               string                     `yaml:"bannerVideo" json:"bannerVideo,omitempty"`
 	IsDraft                   bool                       `yaml:"isDraft" json:"isDraft"`
 	Sections                  []Section                  `yaml:"sections" json:"sections,omitempty"`
 	Assessments               []Assessment               `yaml:"assessments" json:"assessments,omitempty"`
@@ -32,16 +29,15 @@ type Chapter struct {
 
 // Section represents a learning section within a chapter
 type Section struct {
-	Code                 string `yaml:"code" json:"code"`
-	Index                int    `yaml:"-" json:"-"`
-	Title                string `yaml:"title" json:"title"`
-	Description          string `yaml:"-" json:"-"`
-	ShortDescription     string `yaml:"shortDescription" json:"shortDescription,omitempty"`
-	ThumbnailDescription string `yaml:"thumbnailDescription,omitempty" json:"thumbnailDescription,omitempty"`
-	Thumbnail            string `yaml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Video                string `yaml:"video,omitempty" json:"video,omitempty"`
-	EstimatedDuration    string `yaml:"estimatedDuration,omitempty" json:"estimatedDuration,omitempty"`
-	FilePath             string `yaml:"-" json:"-"` // Path to section.yaml
+	Code              string   `yaml:"code" json:"code"`
+	Index             int      `yaml:"-" json:"-"`
+	Title             string   `yaml:"title" json:"title"`
+	Description       string   `yaml:"-" json:"-"`
+	ShortDescription  string   `yaml:"shortDescription" json:"shortDescription,omitempty"`
+	Video             string   `yaml:"video,omitempty" json:"video,omitempty"`
+	EstimatedDuration string   `yaml:"estimatedDuration,omitempty" json:"estimatedDuration,omitempty"`
+	Prerequisites     []string `yaml:"prerequisites,omitempty" json:"prerequisites,omitempty"`
+	FilePath          string   `yaml:"-" json:"-"` // Path to section.yaml
 }
 
 // Assessment represents an interactive assessment

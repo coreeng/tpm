@@ -74,6 +74,25 @@ func TestCompareDetectsCrossParentMove(t *testing.T) {
 	}
 }
 
+func TestCompareReportsDuplicateCodesClearly(t *testing.T) {
+	oldPath := copyFixtureModule(t)
+	newPath := copyFixtureModule(t)
+	duplicateSection := filepath.Join(newPath, "module", "01-cluster-fundamentals", "01-what-is-kubernetes", "section.yaml")
+	if err := os.WriteFile(duplicateSection, []byte("code: cluster-fundamentals\ntitle: Duplicate Code\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Compare(oldPath, newPath)
+	if err == nil {
+		t.Fatal("Compare returned nil error for duplicate codes")
+	}
+	for _, want := range []string{"duplicate code", "cluster-fundamentals", "chapter", "section"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("error %q does not contain %q", err.Error(), want)
+		}
+	}
+}
+
 func TestCompareSupportsPathAtGitRef(t *testing.T) {
 	fixture := filepath.Join("..", "builder", "testdata", "simple-module")
 	report, err := Compare(fixture+"@HEAD", fixture+"@HEAD")

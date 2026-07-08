@@ -31,9 +31,6 @@ export interface ModuleChapter {
   index: number;
   title: Sourced<string>;
   description: Sourced<string>;
-  shortDescription: Sourced<string>;
-  bannerImage: Sourced<string>;
-  bannerVideo: Sourced<string>;
   isDraft: boolean;
   sections: ModuleSection[];
   labs: ModuleLab[];
@@ -46,10 +43,9 @@ export interface ModuleSection {
   title: Sourced<string>;
   description: Sourced<string>;
   shortDescription: Sourced<string>;
-  thumbnailDescription: Sourced<string>;
-  thumbnail: Sourced<string>;
   video: Sourced<string>;
   estimatedDuration: Sourced<string>;
+  prerequisites: Sourced<string>[];
 }
 
 export interface ModuleLab {

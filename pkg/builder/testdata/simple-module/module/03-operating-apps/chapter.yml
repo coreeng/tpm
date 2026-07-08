@@ -1,6 +1,5 @@
 code: operating-apps
 title: Operating applications
-shortDescription: Inspect application health and troubleshoot common runtime issues.
 isDraft: false
 multipleChoiceAssessments:
     - code: kubernetes-operations-check

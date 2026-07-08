@@ -27,9 +27,6 @@ type modulePreviewChapter struct {
 	Index                     int                 `json:"index"`
 	Title                     previewText         `json:"title"`
 	Description               previewText         `json:"description"`
-	ShortDescription          previewText         `json:"shortDescription"`
-	BannerImage               previewText         `json:"bannerImage"`
-	BannerVideo               previewText         `json:"bannerVideo"`
 	IsDraft                   bool                `json:"isDraft"`
 	Sections                  []modulePreviewItem `json:"sections"`
 	Labs                      []modulePreviewLab  `json:"labs"`
@@ -37,15 +34,14 @@ type modulePreviewChapter struct {
 }
 
 type modulePreviewItem struct {
-	Code                 previewText `json:"code"`
-	Index                int         `json:"index"`
-	Title                previewText `json:"title"`
-	Description          previewText `json:"description"`
-	ShortDescription     previewText `json:"shortDescription"`
-	ThumbnailDescription previewText `json:"thumbnailDescription"`
-	Thumbnail            previewText `json:"thumbnail"`
-	Video                previewText `json:"video"`
-	EstimatedDuration    previewText `json:"estimatedDuration"`
+	Code              previewText   `json:"code"`
+	Index             int           `json:"index"`
+	Title             previewText   `json:"title"`
+	Description       previewText   `json:"description"`
+	ShortDescription  previewText   `json:"shortDescription"`
+	Video             previewText   `json:"video"`
+	EstimatedDuration previewText   `json:"estimatedDuration"`
+	Prerequisites     []previewText `json:"prerequisites"`
 }
 
 type modulePreviewLab struct {
@@ -119,16 +115,13 @@ func newModulePreviewPage(mod *module.Module) *modulePreviewPage {
 	}
 	for _, chapter := range mod.Chapters {
 		previewChapter := modulePreviewChapter{
-			Code:             sourcedText(chapter.Code, chapter.FilePath, "code"),
-			Index:            chapter.Index,
-			Title:            sourcedText(chapter.Title, chapter.FilePath, "title"),
-			Description:      sourcedText(chapter.Description, siblingSource(chapter.FilePath, "description.md"), ""),
-			ShortDescription: sourcedText(chapter.ShortDescription, chapter.FilePath, "shortDescription"),
-			BannerImage:      sourcedText(chapter.BannerImage, chapter.FilePath, "bannerImage"),
-			BannerVideo:      sourcedText(chapter.BannerVideo, chapter.FilePath, "bannerVideo"),
-			IsDraft:          chapter.IsDraft,
-			Sections:         make([]modulePreviewItem, 0, len(chapter.Sections)),
-			Labs:             make([]modulePreviewLab, 0, len(chapter.Assessments)),
+			Code:        sourcedText(chapter.Code, chapter.FilePath, "code"),
+			Index:       chapter.Index,
+			Title:       sourcedText(chapter.Title, chapter.FilePath, "title"),
+			Description: sourcedText(chapter.Description, siblingSource(chapter.FilePath, "description.md"), ""),
+			IsDraft:     chapter.IsDraft,
+			Sections:    make([]modulePreviewItem, 0, len(chapter.Sections)),
+			Labs:        make([]modulePreviewLab, 0, len(chapter.Assessments)),
 			MultipleChoiceAssessments: make(
 				[]modulePreviewQuiz,
 				0,
@@ -137,15 +130,14 @@ func newModulePreviewPage(mod *module.Module) *modulePreviewPage {
 		}
 		for _, section := range chapter.Sections {
 			previewChapter.Sections = append(previewChapter.Sections, modulePreviewItem{
-				Code:                 sourcedText(section.Code, section.FilePath, "code"),
-				Index:                section.Index,
-				Title:                sourcedText(section.Title, section.FilePath, "title"),
-				Description:          sourcedText(section.Description, siblingSource(section.FilePath, "description.md"), ""),
-				ShortDescription:     sourcedText(section.ShortDescription, section.FilePath, "shortDescription"),
-				ThumbnailDescription: sourcedText(section.ThumbnailDescription, section.FilePath, "thumbnailDescription"),
-				Thumbnail:            sourcedText(section.Thumbnail, section.FilePath, "thumbnail"),
-				Video:                sourcedText(section.Video, section.FilePath, "video"),
-				EstimatedDuration:    sourcedText(section.EstimatedDuration, section.FilePath, "estimatedDuration"),
+				Code:              sourcedText(section.Code, section.FilePath, "code"),
+				Index:             section.Index,
+				Title:             sourcedText(section.Title, section.FilePath, "title"),
+				Description:       sourcedText(section.Description, siblingSource(section.FilePath, "description.md"), ""),
+				ShortDescription:  sourcedText(section.ShortDescription, section.FilePath, "shortDescription"),
+				Video:             sourcedText(section.Video, section.FilePath, "video"),
+				EstimatedDuration: sourcedText(section.EstimatedDuration, section.FilePath, "estimatedDuration"),
+				Prerequisites:     sourcedTextSlice(section.Prerequisites, section.FilePath, "prerequisites"),
 			})
 		}
 		for _, assessment := range chapter.Assessments {

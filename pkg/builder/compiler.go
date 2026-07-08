@@ -27,9 +27,6 @@ func toBuiltChapter(chapter module.Chapter) module.BuiltChapter {
 		Index:                     chapter.Index,
 		Title:                     chapter.Title,
 		Description:               chapter.Description,
-		ShortDescription:          chapter.ShortDescription,
-		BannerImage:               chapter.BannerImage,
-		BannerVideo:               chapter.BannerVideo,
 		IsDraft:                   chapter.IsDraft,
 		Sections:                  make([]module.BuiltSection, 0, len(chapter.Sections)),
 		Assessments:               make([]module.BuiltAssessment, 0, len(chapter.Assessments)),
@@ -37,15 +34,14 @@ func toBuiltChapter(chapter module.Chapter) module.BuiltChapter {
 	}
 	for _, section := range chapter.Sections {
 		built.Sections = append(built.Sections, module.BuiltSection{
-			Code:                 section.Code,
-			Index:                section.Index,
-			Title:                section.Title,
-			Description:          section.Description,
-			ShortDescription:     section.ShortDescription,
-			ThumbnailDescription: section.ThumbnailDescription,
-			Thumbnail:            section.Thumbnail,
-			Video:                section.Video,
-			EstimatedDuration:    section.EstimatedDuration,
+			Code:              section.Code,
+			Index:             section.Index,
+			Title:             section.Title,
+			Description:       section.Description,
+			ShortDescription:  section.ShortDescription,
+			Video:             section.Video,
+			EstimatedDuration: section.EstimatedDuration,
+			Prerequisites:     append([]string(nil), section.Prerequisites...),
 		})
 	}
 	for _, assessment := range chapter.Assessments {

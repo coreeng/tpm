@@ -197,13 +197,6 @@ function ChapterView({ chapter, index }: { chapter: ModuleChapter; index: number
         </div>
         <div className="space-y-4 p-6">
           <ProseBlock text={chapter.description} />
-          {chapter.bannerVideo.value ? (
-            <a className="inline-flex items-center gap-2 text-sm font-medium text-sky-700" href={chapter.bannerVideo.value}>
-              <PlayCircle className="size-4" />
-              <span>Video link</span>
-              <SourceMarker source={chapter.bannerVideo.source} />
-            </a>
-          ) : null}
         </div>
       </section>
 
@@ -283,6 +276,32 @@ function SectionBlock({
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Clock className="size-4 text-teal-700" />
             <SourcedInline value={section.estimatedDuration} />
+          </div>
+        ) : null}
+        {section.shortDescription.value ? (
+          <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+            <span>{section.shortDescription.value}</span>
+            <SourceMarker source={section.shortDescription.source} />
+          </p>
+        ) : null}
+        {section.video.value ? (
+          <a className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-teal-700" href={section.video.value}>
+            <PlayCircle className="size-4" />
+            <span>Video link</span>
+            <SourceMarker source={section.video.source} />
+          </a>
+        ) : null}
+        {section.prerequisites.length ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {section.prerequisites.map((prerequisite, prerequisiteIndex) => (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 ring-1 ring-teal-100"
+                key={`${moduleSectionKey(section, index)}-prerequisite-${prerequisiteIndex}`}
+              >
+                {prerequisite.value}
+                <SourceMarker source={prerequisite.source} />
+              </span>
+            ))}
           </div>
         ) : null}
         <div className="mt-4">

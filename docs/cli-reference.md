@@ -145,17 +145,17 @@ tpm module remove <type> <module-path> [selectors] --from <index> --yes
 
 | Type | Fields |
 | --- | --- |
-| `module` | `code`, `title`, `shortDescription`, `bannerImage`, `bannerVideo`, `tags`, `level`, `video` |
-| `chapter` | `code`, `title`, `shortDescription`, `bannerImage`, `bannerVideo`, `isDraft`, `video` |
-| `section` | `code`, `title`, `shortDescription`, `estimatedDuration`, `video`, `thumbnail`, `thumbnailDescription` |
+| `module` | `code`, `title`, `shortDescription`, `bannerImage`, `bannerVideo`, `tags`, `level` |
+| `chapter` | `code`, `title`, `isDraft` |
+| `section` | `code`, `title`, `shortDescription`, `estimatedDuration`, `video`, `prerequisites` |
 | `lab` | `code`, `title`, `timeLimit`, `starterImageUri`, `validatorImageUri`, `imageVersion`, `video` |
 | `challenge` | `code`, `title`, `estimatedDuration`, `video` |
 | `goal` | `code`, `title`, `description` |
-| `quiz` | `code`, `title`, `description`, `passingScore`, `video` |
+| `quiz` | `code`, `title`, `description`, `passingScore` |
 | `question` | `code`, `question`, `type` |
 | `option` | `text`, `correct` |
 
-Values are parsed as booleans when they are `true` or `false`, integers when numeric, and strings otherwise. `tags` accepts a comma-separated list.
+Values are typed by field. `isDraft` and `correct` must be `true` or `false`; `passingScore` must be an integer; `tags` and `prerequisites` accept comma-separated lists. Other values are written as strings, even when they look numeric.
 
 ### Add Examples
 
@@ -170,7 +170,8 @@ tpm module add section modules/kubernetes-101 \
   --at 2 \
   --set code=control-plane-and-nodes \
   --set title="Control plane and nodes" \
-  --set estimatedDuration=18m
+  --set estimatedDuration=18m \
+  --set prerequisites="Read the cluster overview"
 
 tpm module add quiz modules/kubernetes-101 \
   --chapter 3 \

@@ -1,0 +1,92 @@
+code: contract-module
+title: Contract Module
+description: |
+    This module fixture contains every source field that TPM intentionally preserves into the built module artifact.
+shortDescription: Exercises every module contract field.
+bannerImage: https://example.com/module-banner.png
+bannerVideo: https://example.com/module-video
+tags:
+    - contract
+    - kubernetes
+level: INTERMEDIATE
+chapters:
+    - code: contract-chapter
+      index: 1
+      title: Contract Chapter
+      description: |
+        This chapter fixture contains the chapter fields consumed by the platform.
+      isDraft: true
+      sections:
+        - code: contract-section
+          index: 1
+          title: Contract Section
+          description: |
+            This section fixture covers short descriptions, video, estimated duration, and prerequisites.
+          shortDescription: A concise section summary.
+          video: https://example.com/section-video
+          estimatedDuration: 12m
+          prerequisites:
+            - Know what a Pod is
+            - Know how to run kubectl
+      assessments:
+        - code: contract-lab
+          index: 1
+          title: Contract Lab
+          description: |
+            This lab fixture covers assessment metadata that is loaded by the training backend.
+          timeLimit: 45m
+          starterImageUri: oci://ghcr.io/coreeng/contract-starter
+          validatorImageUri: oci://ghcr.io/coreeng/contract-validator
+          imageVersion: 1.2.3
+          video: https://example.com/lab-video
+          challenges:
+            - code: ContractChallenge
+              index: 1
+              title: Contract Challenge
+              description: |
+                This challenge fixture covers challenge instructions, video, estimated duration, and goals.
+              successMessage: |
+                The contract challenge has been completed.
+              estimatedDuration: 20m
+              video: https://example.com/challenge-video
+              goals:
+                - code: FirstGoal
+                  index: 0
+                  title: First Goal
+                  description: Complete the first contract goal.
+                - code: SecondGoal
+                  index: 1
+                  title: Second Goal
+                  description: Complete the second contract goal.
+      multipleChoiceAssessments:
+        - code: contract-quiz
+          index: 0
+          title: Contract Quiz
+          description: Confirm the quiz contract.
+          passingScore: 80
+          questions:
+            - code: single-choice
+              index: 0
+              question: Which object owns rollout history?
+              type: SINGLE
+              options:
+                - index: 0
+                  text: Deployment
+                  correct: true
+                - index: 1
+                  text: Service
+                  correct: false
+            - code: multiple-choice
+              index: 1
+              question: Which signals help diagnose workload health?
+              type: MULTIPLE
+              options:
+                - index: 0
+                  text: Pod status
+                  correct: true
+                - index: 1
+                  text: Events
+                  correct: true
+                - index: 2
+                  text: Billing labels
+                  correct: false

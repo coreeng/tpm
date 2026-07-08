@@ -1,0 +1,7 @@
+code: contract-lab
+title: Contract Lab
+timeLimit: 45m
+starterImageUri: oci://ghcr.io/coreeng/contract-starter
+validatorImageUri: oci://ghcr.io/coreeng/contract-validator
+imageVersion: 1.2.3
+video: https://example.com/lab-video

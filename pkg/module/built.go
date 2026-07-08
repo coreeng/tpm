@@ -19,9 +19,6 @@ type BuiltChapter struct {
 	Index                     int                             `yaml:"index" json:"index"`
 	Title                     string                          `yaml:"title" json:"title"`
 	Description               string                          `yaml:"description" json:"description"`
-	ShortDescription          string                          `yaml:"shortDescription" json:"shortDescription,omitempty"`
-	BannerImage               string                          `yaml:"bannerImage" json:"bannerImage,omitempty"`
-	BannerVideo               string                          `yaml:"bannerVideo" json:"bannerVideo,omitempty"`
 	IsDraft                   bool                            `yaml:"isDraft" json:"isDraft"`
 	Sections                  []BuiltSection                  `yaml:"sections" json:"sections,omitempty"`
 	Assessments               []BuiltAssessment               `yaml:"assessments" json:"assessments,omitempty"`
@@ -29,15 +26,14 @@ type BuiltChapter struct {
 }
 
 type BuiltSection struct {
-	Code                 string `yaml:"code" json:"code"`
-	Index                int    `yaml:"index" json:"index"`
-	Title                string `yaml:"title" json:"title"`
-	Description          string `yaml:"description" json:"description"`
-	ShortDescription     string `yaml:"shortDescription" json:"shortDescription,omitempty"`
-	ThumbnailDescription string `yaml:"thumbnailDescription,omitempty" json:"thumbnailDescription,omitempty"`
-	Thumbnail            string `yaml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Video                string `yaml:"video,omitempty" json:"video,omitempty"`
-	EstimatedDuration    string `yaml:"estimatedDuration,omitempty" json:"estimatedDuration,omitempty"`
+	Code              string   `yaml:"code" json:"code"`
+	Index             int      `yaml:"index" json:"index"`
+	Title             string   `yaml:"title" json:"title"`
+	Description       string   `yaml:"description" json:"description"`
+	ShortDescription  string   `yaml:"shortDescription" json:"shortDescription,omitempty"`
+	Video             string   `yaml:"video,omitempty" json:"video,omitempty"`
+	EstimatedDuration string   `yaml:"estimatedDuration,omitempty" json:"estimatedDuration,omitempty"`
+	Prerequisites     []string `yaml:"prerequisites,omitempty" json:"prerequisites,omitempty"`
 }
 
 type BuiltAssessment struct {

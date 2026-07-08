@@ -1,0 +1,9 @@
+code: contract-module
+title: Contract Module
+shortDescription: Exercises every module contract field.
+bannerImage: https://example.com/module-banner.png
+bannerVideo: https://example.com/module-video
+tags:
+  - contract
+  - kubernetes
+level: INTERMEDIATE

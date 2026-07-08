@@ -48,7 +48,6 @@ func TestScaffoldModuleSkeleton(t *testing.T) {
 	chapterYAML := readFile(t, filepath.Join(dir, "config-map-module/module/01-getting-started/chapter.yml"))
 	for _, want := range []string{
 		"title: Getting Started",
-		"shortDescription: Start building local labs.",
 		"isDraft: false",
 	} {
 		if !strings.Contains(chapterYAML, want) {
@@ -58,6 +57,7 @@ func TestScaffoldModuleSkeleton(t *testing.T) {
 	for _, reject := range []string{
 		"index:",
 		"description:",
+		"shortDescription:",
 	} {
 		if strings.Contains(chapterYAML, reject) {
 			t.Fatalf("chapter.yml contains unsupported source chapter property %q", reject)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -127,6 +128,7 @@ type labPreviewOptions struct {
 	addr          string
 	noOpenBrowser bool
 	watch         bool
+	runInfoJSON   string
 }
 
 func newLabPreviewCmd() *cobra.Command {
@@ -154,6 +156,7 @@ func newLabPreviewCmd() *cobra.Command {
 	cmd.Flags().StringVar(&previewOpts.addr, "addr", "127.0.0.1:0", "Address to listen on")
 	cmd.Flags().BoolVar(&previewOpts.noOpenBrowser, "no-open-browser", false, "Do not open the preview URL in the default browser")
 	cmd.Flags().BoolVar(&previewOpts.watch, "watch", false, "Reload lab metadata and markdown when source files change")
+	cmd.Flags().StringVar(&previewOpts.runInfoJSON, "run-info-json", "", "Write lab run details to this JSON file")
 	return cmd
 }
 
@@ -237,6 +240,13 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 		return err
 	}
 
+	url := "http://" + listener.Addr().String()
+	if previewOpts.runInfoJSON != "" {
+		if err := writeLabPreviewRunInfo(previewOpts.runInfoJSON, state, url); err != nil {
+			return err
+		}
+	}
+
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
 	go func() {
@@ -245,7 +255,6 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 		}
 	}()
 
-	url := "http://" + listener.Addr().String()
 	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Lab preview: %s\n", url); err != nil {
 		return err
 	}
@@ -266,6 +275,39 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 	case err := <-errCh:
 		return err
 	}
+}
+
+type labPreviewRunInfo struct {
+	RunID              string `json:"runId"`
+	SystemNamespace    string `json:"systemNamespace"`
+	WorkspaceNamespace string `json:"workspaceNamespace"`
+	RegistryURL        string `json:"registryUrl"`
+	RegistryUsername   string `json:"registryUsername"`
+	RegistryToken      string `json:"registryToken"`
+	PreviewURL         string `json:"previewUrl"`
+}
+
+func writeLabPreviewRunInfo(path string, state *lab.RunState, previewURL string) error {
+	if state == nil {
+		return fmt.Errorf("lab state is required")
+	}
+	info := labPreviewRunInfo{
+		RunID:              state.RunID,
+		SystemNamespace:    state.SystemNamespace,
+		WorkspaceNamespace: state.WorkspaceNamespace,
+		RegistryURL:        state.RegistryURL,
+		RegistryUsername:   state.RegistryUsername,
+		RegistryToken:      state.RegistryToken,
+		PreviewURL:         previewURL,
+	}
+	data, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(data, '\n'), 0600)
 }
 
 func validateLocalPreviewAddress(addr string) error {

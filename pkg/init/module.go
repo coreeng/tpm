@@ -100,7 +100,6 @@ func titleFromName(name string) string {
 
 const chapterYAML = `code: getting-started
 title: Getting Started
-shortDescription: Start building local labs.
 isDraft: false
 `
 

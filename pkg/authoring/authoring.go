@@ -294,13 +294,13 @@ func load(modulePath string) (module.ResolvedPath, *module.Module, error) {
 }
 
 var allowedFields = map[string]map[string]bool{
-	"module":    fieldSet("code", "title", "shortDescription", "bannerImage", "bannerVideo", "tags", "level", "video"),
-	"chapter":   fieldSet("code", "title", "shortDescription", "bannerImage", "bannerVideo", "isDraft", "video"),
-	"section":   fieldSet("code", "title", "shortDescription", "estimatedDuration", "video", "thumbnail", "thumbnailDescription"),
+	"module":    fieldSet("code", "title", "shortDescription", "bannerImage", "bannerVideo", "tags", "level"),
+	"chapter":   fieldSet("code", "title", "isDraft"),
+	"section":   fieldSet("code", "title", "shortDescription", "estimatedDuration", "video", "prerequisites"),
 	"lab":       fieldSet("code", "title", "timeLimit", "starterImageUri", "validatorImageUri", "imageVersion", "video"),
 	"challenge": fieldSet("code", "title", "estimatedDuration", "video"),
 	"goal":      fieldSet("code", "title", "description"),
-	"quiz":      fieldSet("code", "title", "description", "passingScore", "video"),
+	"quiz":      fieldSet("code", "title", "description", "passingScore"),
 	"question":  fieldSet("code", "question", "type"),
 	"option":    fieldSet("text", "correct"),
 }
@@ -328,26 +328,49 @@ func parseSets(resource string, sets []string) (map[string]*yaml.Node, error) {
 		if !allowed[key] {
 			return nil, fmt.Errorf("%s.%s is not editable YAML through the CLI", resource, key)
 		}
-		fields[key] = scalarNode(key, value)
+		node, err := scalarNode(resource, key, value)
+		if err != nil {
+			return nil, err
+		}
+		fields[key] = node
 	}
 	return fields, nil
 }
 
-func scalarNode(key, value string) *yaml.Node {
-	if key == "tags" {
+func scalarNode(resource, key, value string) (*yaml.Node, error) {
+	switch fieldType(resource, key) {
+	case "sequence":
 		seq := &yaml.Node{Kind: yaml.SequenceNode}
 		for _, item := range strings.Split(value, ",") {
 			seq.Content = append(seq.Content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: strings.TrimSpace(item)})
 		}
-		return seq
+		return seq, nil
+	case "bool":
+		if value != "true" && value != "false" {
+			return nil, fmt.Errorf("%s.%s must be true or false", resource, key)
+		}
+		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!bool", Value: value}, nil
+	case "int":
+		if _, err := strconv.Atoi(value); err != nil {
+			return nil, fmt.Errorf("%s.%s must be an integer", resource, key)
+		}
+		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!int", Value: value}, nil
+	default:
+		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: value}, nil
 	}
-	if value == "true" || value == "false" {
-		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!bool", Value: value}
+}
+
+func fieldType(resource, key string) string {
+	switch key {
+	case "tags", "prerequisites":
+		return "sequence"
+	case "isDraft", "correct":
+		return "bool"
+	case "passingScore":
+		return "int"
+	default:
+		return "string"
 	}
-	if _, err := strconv.Atoi(value); err == nil {
-		return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!int", Value: value}
-	}
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: value}
 }
 
 func addDirResource(parent, fileName string, at int, fields map[string]*yaml.Node, resource string) error {
@@ -356,7 +379,7 @@ func addDirResource(parent, fileName string, at int, fields map[string]*yaml.Nod
 	}
 	if resource == "chapter" {
 		if _, ok := fields["isDraft"]; !ok {
-			fields["isDraft"] = scalarNode("isDraft", "false")
+			fields["isDraft"] = &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!bool", Value: "false"}
 		}
 	}
 	if resource == "challenge" {
@@ -674,7 +697,7 @@ func writeYAML(path string, node *yaml.Node) error {
 
 func mappingNode(fields map[string]*yaml.Node) *yaml.Node {
 	node := &yaml.Node{Kind: yaml.MappingNode}
-	preferred := []string{"code", "title", "question", "type", "text", "correct", "description", "passingScore", "isDraft", "shortDescription", "timeLimit", "starterImageUri", "validatorImageUri", "imageVersion", "estimatedDuration", "video", "bannerImage", "bannerVideo", "thumbnail", "thumbnailDescription", "tags", "goals", "questions", "options"}
+	preferred := []string{"code", "title", "question", "type", "text", "correct", "description", "passingScore", "isDraft", "shortDescription", "timeLimit", "starterImageUri", "validatorImageUri", "imageVersion", "estimatedDuration", "video", "bannerImage", "bannerVideo", "tags", "prerequisites", "goals", "questions", "options"}
 	seen := map[string]bool{}
 	for _, key := range preferred {
 		if value, ok := fields[key]; ok {

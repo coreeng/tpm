@@ -35,15 +35,13 @@
       "format": "uri",
       "description": "Optional URL to a video resource for this section."
     },
-    "thumbnail": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional image URL for section card thumbnail. NOTE: Currently unused by the training platform."
-    },
-    "thumbnailDescription": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Optional description or alt text for the thumbnail image. NOTE: Currently unused by the training platform."
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Optional section prerequisites displayed before the section content."
     }
   },
   "additionalProperties": false,
@@ -53,7 +51,8 @@
       "title": "Introduction",
       "shortDescription": "What is a Delivery Unit?",
       "video": "https://www.youtube.com/watch?v=example",
-      "estimatedDuration": "15m"
+      "estimatedDuration": "15m",
+      "prerequisites": ["Complete the previous section"]
     }
   ]
 }

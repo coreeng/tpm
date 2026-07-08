@@ -24,6 +24,7 @@ tpm.exe
 coverage.txt
 coverage.out
 coverage.html
+run-info.json
 
 # Frontend dependencies
 node_modules/

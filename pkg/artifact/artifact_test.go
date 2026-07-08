@@ -20,9 +20,6 @@ chapters:
     index: 1
     title: Test Chapter
     description: A test chapter
-    shortDescription: Test chapter
-    bannerImage: https://example.com/chapter.png
-    bannerVideo: https://example.com/chapter.mp4
     isDraft: true
     sections:
       - code: test-section-789
@@ -32,6 +29,8 @@ chapters:
         shortDescription: A brief test section
         video: https://example.com/video.mp4
         estimatedDuration: 30m
+        prerequisites:
+          - Know how to open the module
     assessments: []
     multipleChoiceAssessments: []
 `

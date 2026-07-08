@@ -76,6 +76,37 @@ func TestBuildModule_Baseline(t *testing.T) {
 	}
 }
 
+func TestBuildModule_PreservesCompleteContractFields(t *testing.T) {
+	outDir := t.TempDir()
+
+	_, err := Build("testdata/contract-module", outDir, "", "")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+
+	// #nosec G304 -- test reads the output path it just built.
+	actualBytes, err := os.ReadFile(filepath.Join(outDir, "contract-module", "module.yaml"))
+	if err != nil {
+		t.Fatalf("Failed to read output file: %v", err)
+	}
+	// #nosec G304 -- test reads a controlled repository baseline fixture.
+	baselineBytes, err := os.ReadFile(filepath.Join("testdata", "contract-module", "baseline-module.yaml"))
+	if err != nil {
+		t.Fatalf("Failed to read baseline file: %v", err)
+	}
+
+	var actual, baseline map[string]interface{}
+	if err := yaml.Unmarshal(actualBytes, &actual); err != nil {
+		t.Fatalf("Failed to unmarshal actual YAML: %v", err)
+	}
+	if err := yaml.Unmarshal(baselineBytes, &baseline); err != nil {
+		t.Fatalf("Failed to unmarshal baseline YAML: %v", err)
+	}
+	if diff := cmp.Diff(baseline, actual); diff != "" {
+		t.Fatalf("contract build output differs from baseline (-baseline +actual):\n%s", diff)
+	}
+}
+
 func TestBuildModule_BaselineStructure(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()

@@ -19,9 +19,6 @@ chapters:
         Kubernetes is a platform for running containers across a group of machines.
 
         This chapter explains the cluster model: the API server stores desired state, the control plane coordinates work, and nodes run application containers.
-      shortDescription: Understand the control plane, nodes, namespaces, and API server.
-      bannerImage: ""
-      bannerVideo: ""
       isDraft: false
       sections:
         - code: what-is-kubernetes
@@ -51,9 +48,6 @@ chapters:
         Applications usually run through higher-level workload objects rather than hand-managed containers.
 
         This chapter covers the path from a container image to a reliable application endpoint inside the cluster.
-      shortDescription: Learn how Pods, Deployments, and Services work together.
-      bannerImage: ""
-      bannerVideo: ""
       isDraft: false
       sections:
         - code: pods-deployments-and-services
@@ -74,6 +68,8 @@ chapters:
             When you update a Deployment, Kubernetes creates a new ReplicaSet and gradually shifts Pods toward the new template. This gives operators a controlled way to change application versions without replacing every Pod at once.
           shortDescription: Understand how Deployments update Pods while preserving availability.
           estimatedDuration: 18m
+          prerequisites:
+            - Understand Pods and Deployments
         - code: service-discovery
           index: 3
           title: Service discovery
@@ -92,9 +88,6 @@ chapters:
         Running an application is only the start.
 
         This chapter introduces the commands and signals operators use to understand what Kubernetes is doing and where a workload needs attention.
-      shortDescription: Inspect application health and troubleshoot common runtime issues.
-      bannerImage: ""
-      bannerVideo: ""
       isDraft: false
       sections:
         - code: observe-and-troubleshoot

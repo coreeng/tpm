@@ -20,36 +20,16 @@
       "minLength": 1,
       "description": "Display name for the chapter shown in the UI."
     },
+    "isDraft": {
+      "type": "boolean",
+      "description": "Boolean to indicate if the chapter is a draft. Set to false for published chapters."
+    },
     "multipleChoiceAssessments": {
       "type": "array",
       "items": {
         "$ref": "multiple-choice-assessment.schema.json"
       },
       "description": "Optional array of quiz-based assessments defined inline in this chapter.yml file."
-    },
-    "video": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional URL to a chapter introduction video."
-    },
-    "shortDescription": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Optional brief summary of the chapter. NOTE: Currently unused by the training platform."
-    },
-    "bannerImage": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional chapter-specific header image URL. NOTE: Currently unused by the training platform."
-    },
-    "bannerVideo": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional chapter-specific banner video URL. NOTE: Currently unused by the training platform."
-    },
-    "isDraft": {
-      "type": "boolean",
-      "description": "Boolean to indicate if the chapter is a draft. Set to false for published chapters."
     }
   },
   "additionalProperties": false,
@@ -57,7 +37,6 @@
     {
       "code": "c73d4550-cce0-40df-a753-f9c9ea3d00b4",
       "title": "The Delivery Unit",
-      "shortDescription": "Learn what a delivery unit is and how it fits into modern software architecture",
       "isDraft": false
     },
     {

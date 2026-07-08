@@ -27,6 +27,14 @@ func sourcedText(value, path, property string) previewText {
 	return previewText{Value: value, Source: previewSourceRefFor(path, property)}
 }
 
+func sourcedTextSlice(values []string, path, property string) []previewText {
+	out := make([]previewText, 0, len(values))
+	for _, value := range values {
+		out = append(out, sourcedText(value, path, property))
+	}
+	return out
+}
+
 func sourcedNumber(value int, path, property string) previewNumber {
 	return previewNumber{Value: value, Source: previewSourceRefFor(path, property)}
 }

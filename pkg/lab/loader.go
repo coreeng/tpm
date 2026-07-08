@@ -41,7 +41,10 @@ func loadStandalone(rootPath, metadataPath string) (*Lab, error) {
 }
 
 func loadModuleBacked(metadataRoot, runtimePath string) (*Lab, error) {
-	metadataPath := filepath.Join(metadataRoot, "assessment.yaml")
+	metadataPath := findAssessmentFile(metadataRoot)
+	if metadataPath == "" {
+		return nil, fmt.Errorf("assessment metadata not found in %q: %w", metadataRoot, os.ErrNotExist)
+	}
 	var loaded Lab
 	if err := loadYAML(metadataPath, &loaded); err != nil {
 		return nil, err
@@ -132,6 +135,16 @@ func loadChallenges(metadataRoot string) ([]Challenge, error) {
 		challenges = append(challenges, item.challenge)
 	}
 	return challenges, nil
+}
+
+func findAssessmentFile(path string) string {
+	for _, name := range []string{"assessment.yaml", "assessment.yml"} {
+		candidate := filepath.Join(path, name)
+		if fileExists(candidate) {
+			return candidate
+		}
+	}
+	return ""
 }
 
 func findChallengeFile(path string) string {

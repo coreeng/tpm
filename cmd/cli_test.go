@@ -109,7 +109,7 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 	if err != nil {
 		t.Fatalf("lab preview --help returned error: %v\n%s", err, output)
 	}
-	for _, want := range []string{"--addr", "--no-open-browser", "--watch", "--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
+	for _, want := range []string{"--addr", "--no-open-browser", "--watch", "--run-info-json", "--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("lab preview help does not contain %q:\n%s", want, output)
 		}
@@ -250,6 +250,34 @@ func TestLabPreviewPayloadIncludesRuntimeToken(t *testing.T) {
 		if !strings.Contains(string(rendered), want) {
 			t.Fatalf("lab preview payload does not contain %q:\n%s", want, rendered)
 		}
+	}
+}
+
+func TestWriteLabPreviewRunInfo(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "run-info.json")
+	err := writeLabPreviewRunInfo(path, &lab.RunState{
+		RunID:              "abc123",
+		SystemNamespace:    "lab-abc123-system",
+		WorkspaceNamespace: "lab-abc123-workspace",
+		RegistryURL:        "https://registry.example.test",
+		RegistryUsername:   "learner",
+		RegistryToken:      "secret-token-value",
+	}, "http://127.0.0.1:12345")
+	if err != nil {
+		t.Fatalf("writeLabPreviewRunInfo returned error: %v", err)
+	}
+
+	// #nosec G304 -- test reads the exact file it just asked the helper to write.
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read run info: %v", err)
+	}
+	var info labPreviewRunInfo
+	if err := json.Unmarshal(contents, &info); err != nil {
+		t.Fatalf("unmarshal run info: %v\n%s", err, contents)
+	}
+	if info.RunID != "abc123" || info.WorkspaceNamespace != "lab-abc123-workspace" || info.RegistryToken != "secret-token-value" || info.PreviewURL != "http://127.0.0.1:12345" {
+		t.Fatalf("run info = %#v", info)
 	}
 }
 
