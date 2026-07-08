@@ -91,7 +91,7 @@ full lab layout and a `validator/` that checks the learner's running workload.
 Run it locally against a kind cluster (the lab runtime is published as an OCI Helm chart):
 
 ```bash
-tpm lab start examples/spring-boot-health-checks \
+tpm lab preview examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 

@@ -102,24 +102,22 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 		}
 	}
 
-	output, err = executeRootCommand("lab", "start", "--help")
-	if err != nil {
-		t.Fatalf("lab start --help returned error: %v\n%s", err, output)
-	}
-	for _, want := range []string{"--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
-		if !strings.Contains(output, want) {
-			t.Fatalf("lab start help does not contain %q:\n%s", want, output)
-		}
-	}
-
 	output, err = executeRootCommand("lab", "preview", "--help")
 	if err != nil {
 		t.Fatalf("lab preview --help returned error: %v\n%s", err, output)
 	}
-	for _, want := range []string{"--addr", "--open", "--watch"} {
+	for _, want := range []string{"--addr", "--open", "--watch", "--chart-dir", "--chart-uri", "--state-dir", "--validator-registry"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("lab preview help does not contain %q:\n%s", want, output)
 		}
+	}
+
+	output, err = executeRootCommand("lab", "cleanup", "--help")
+	if err != nil {
+		t.Fatalf("lab cleanup --help returned error: %v\n%s", err, output)
+	}
+	if !strings.Contains(output, "--id") || !strings.Contains(output, "--state-dir") {
+		t.Fatalf("lab cleanup help does not contain expected flags:\n%s", output)
 	}
 
 	output, err = executeRootCommand("lab", "run")
@@ -130,12 +128,20 @@ func TestLabInitOutlineAndRuntimeSurface(t *testing.T) {
 		t.Fatalf("lab run error does not report unknown command: %v\n%s", err, output)
 	}
 
-	output, err = executeRootCommand("lab", "cleanup")
+	output, err = executeRootCommand("lab", "start")
 	if err == nil {
-		t.Fatalf("lab cleanup unexpectedly succeeded:\n%s", output)
+		t.Fatalf("lab start unexpectedly succeeded:\n%s", output)
 	}
 	if !strings.Contains(err.Error(), "unknown command") {
-		t.Fatalf("lab cleanup error does not report unknown command: %v\n%s", err, output)
+		t.Fatalf("lab start error does not report unknown command: %v\n%s", err, output)
+	}
+
+	output, err = executeRootCommand("lab", "stop")
+	if err == nil {
+		t.Fatalf("lab stop unexpectedly succeeded:\n%s", output)
+	}
+	if !strings.Contains(err.Error(), "unknown command") {
+		t.Fatalf("lab stop error does not report unknown command: %v\n%s", err, output)
 	}
 }
 
@@ -166,7 +172,7 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 	}
 }
 
-func TestLabStartValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
+func TestLabPreviewValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		args []string
@@ -174,18 +180,23 @@ func TestLabStartValidatesChartFlagsBeforeLoadingLab(t *testing.T) {
 	}{
 		{
 			name: "conflicting chart sources",
-			args: []string{"lab", "start", "does-not-exist", "--chart-dir", "/tmp/local-chart", "--chart-uri", "oci://example.com/chart"},
+			args: []string{"lab", "preview", "does-not-exist", "--chart-dir", "/tmp/local-chart", "--chart-uri", "oci://example.com/chart"},
 			want: "set either chart-dir or chart-uri",
 		},
 		{
 			name: "blank chart uri",
-			args: []string{"lab", "start", "does-not-exist", "--chart-uri", " "},
+			args: []string{"lab", "preview", "does-not-exist", "--chart-uri", " "},
 			want: "chart-uri must not be blank",
 		},
 		{
 			name: "blank chart version",
-			args: []string{"lab", "start", "does-not-exist", "--chart-uri", "oci://example.com/chart", "--chart-version", "\t"},
+			args: []string{"lab", "preview", "does-not-exist", "--chart-uri", "oci://example.com/chart", "--chart-version", "\t"},
 			want: "chart-version must not be blank",
+		},
+		{
+			name: "invalid preview address",
+			args: []string{"lab", "preview", "does-not-exist", "--chart-uri", "oci://example.com/chart", "--addr", "127.0.0.1:99999"},
+			want: "invalid port",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

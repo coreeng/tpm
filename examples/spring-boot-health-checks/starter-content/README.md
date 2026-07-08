@@ -31,7 +31,7 @@ Start the lab locally against a kind cluster (the lab runtime is a published OCI
 For example, from the `tpm` repo root:
 
 ```sh
-tpm lab start examples/spring-boot-health-checks \
+tpm lab preview examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
@@ -43,7 +43,7 @@ specific chart version.
 
 > [!TIP]
 > `<workspace-namespace>` is the workspace namespace for your lab run. It is printed by
-> `tpm lab start` (the `Workspace namespace:` line) and is also shown by
+> `tpm lab preview` (the `Workspace namespace:` line) and is also shown by
 > `tpm lab status --id <run-id>`. It looks like `lab-<run-id>-workspace`.
 
 For kind:
@@ -81,7 +81,7 @@ When all three are green, the challenge is complete.
 When you're finished, tear down the lab run (removes its namespaces and cluster resources):
 
 ```sh
-tpm lab stop --id <lab-id>
+tpm lab cleanup --id <lab-id>
 ```
 
 > [!NOTE]

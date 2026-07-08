@@ -23,7 +23,7 @@ func newLabCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "lab",
 		Short:        "Work with local labs",
-		Long:         "Create, preview, start, inspect, and stop local labs.",
+		Long:         "Create, preview, inspect, and clean up local labs.",
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,10 +33,9 @@ func newLabCmd() *cobra.Command {
 	cmd.AddCommand(newLabInitCmd())
 	cmd.AddCommand(newLabOutlineCmd())
 	cmd.AddCommand(newLabPreviewCmd())
-	cmd.AddCommand(newLabStartCmd())
 	cmd.AddCommand(newLabListCmd())
 	cmd.AddCommand(newLabStatusCmd())
-	cmd.AddCommand(newLabStopCmd())
+	cmd.AddCommand(newLabCleanupCmd())
 	return cmd
 }
 
@@ -131,27 +130,85 @@ type labPreviewOptions struct {
 	watch bool
 }
 
+type labPreviewPage struct {
+	*lab.Lab
+	State *lab.RunState
+}
+
 func newLabPreviewCmd() *cobra.Command {
-	opts := &labPreviewOptions{}
+	previewOpts := &labPreviewOptions{}
+	runtimeOpts := lab.Options{}
 	cmd := &cobra.Command{
 		Use:   "preview <lab-path>",
-		Short: "Preview lab text, challenges, and goals in a local web UI",
+		Short: "Start a local lab runtime and preview it in a local web UI",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runLabPreview(cmd.Context(), cmd, args[0], opts)
+			if err := prepareLabRuntimeOptions(cmd, &runtimeOpts, args[0]); err != nil {
+				return err
+			}
+			return runLabPreview(cmd.Context(), cmd, &runtimeOpts, previewOpts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.addr, "addr", "127.0.0.1:0", "Address to listen on")
-	cmd.Flags().BoolVar(&opts.open, "open", false, "Open the preview URL in the default browser")
-	cmd.Flags().BoolVar(&opts.watch, "watch", false, "Reload lab metadata and markdown on each browser refresh")
+	addSharedLabFlags(cmd, &runtimeOpts)
+	cmd.Flags().StringVar(&runtimeOpts.ChartDir, "chart-dir", "", "Path to a local lab runtime Helm chart directory")
+	cmd.Flags().StringVar(&runtimeOpts.ChartURI, "chart-uri", "", "OCI URI for the lab runtime Helm chart")
+	cmd.Flags().StringVar(&runtimeOpts.ChartVersion, "chart-version", "", "Version of the lab runtime Helm chart")
+	cmd.Flags().StringVar(&runtimeOpts.ValidatorRegistry, "validator-registry", lab.DefaultArtifactRegistry, "Registry for the locally built validator image")
+	cmd.Flags().StringVar(&runtimeOpts.RegistryDomain, "registry-domain", lab.DefaultArtifactRegistry, "Learner registry domain passed to the lab runtime chart")
+	cmd.Flags().BoolVar(&runtimeOpts.AssumeImageAccessible, "assume-image-accessible", false, "assume a non-kind cluster can pull the local validator image tag")
+	cmd.Flags().DurationVar(&runtimeOpts.CheckInterval, "check-interval", 5*time.Second, "validator check interval")
+	cmd.Flags().StringVar(&previewOpts.addr, "addr", "127.0.0.1:0", "Address to listen on")
+	cmd.Flags().BoolVar(&previewOpts.open, "open", false, "Open the preview URL in the default browser")
+	cmd.Flags().BoolVar(&previewOpts.watch, "watch", false, "Reload lab metadata and markdown on each browser refresh")
 	return cmd
 }
 
-func runLabPreview(ctx context.Context, cmd *cobra.Command, labPath string, opts *labPreviewOptions) error {
+func prepareLabRuntimeOptions(cmd *cobra.Command, opts *lab.Options, labPath string) error {
+	chartDir := strings.TrimSpace(opts.ChartDir)
+	chartURI := strings.TrimSpace(opts.ChartURI)
+	chartURIChanged := cmd.Flags().Changed("chart-uri")
+	chartVersion := strings.TrimSpace(opts.ChartVersion)
+	if chartDir != "" && chartURI != "" {
+		return fmt.Errorf("set either chart-dir or chart-uri, not both")
+	}
+	if chartURIChanged && chartURI == "" {
+		return fmt.Errorf("chart-uri must not be blank")
+	}
+	if chartDir == "" && chartURI == "" {
+		return fmt.Errorf("chart-dir or chart-uri must be set")
+	}
+	if cmd.Flags().Changed("chart-version") && chartVersion == "" {
+		return fmt.Errorf("chart-version must not be blank")
+	}
+	opts.ChartDir = chartDir
+	opts.ChartURI = chartURI
+	opts.ChartVersion = chartVersion
+	opts.LabPath = labPath
+	return nil
+}
+
+func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Options, previewOpts *labPreviewOptions) error {
+	runtimeOpts.LogWriter = cmd.OutOrStdout()
+
+	listener, err := net.Listen("tcp", previewOpts.addr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = listener.Close()
+	}()
+
+	state, err := lab.Run(ctx, *runtimeOpts)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Lab %s running\nSystem namespace: %s\nWorkspace namespace: %s\nRegistry URL: %s\nRegistry username: %s\nRegistry token: %s\n", state.RunID, state.SystemNamespace, state.WorkspaceNamespace, state.RegistryURL, state.RegistryUsername, state.RegistryToken); err != nil {
+		return err
+	}
+
 	var loaded *lab.Lab
-	var err error
-	if !opts.watch {
-		loaded, err = lab.Load(labPath)
+	if !previewOpts.watch {
+		loaded, err = lab.Load(state.LabPath)
 		if err != nil {
 			return err
 		}
@@ -160,26 +217,18 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, labPath string, opts
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		current := loaded
-		if opts.watch {
+		if previewOpts.watch {
 			var err error
-			current, err = lab.Load(labPath)
+			current, err = lab.Load(state.LabPath)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
-		if err := labPreviewTemplate.Execute(w, current); err != nil {
+		if err := labPreviewTemplate.Execute(w, labPreviewPage{Lab: current, State: state}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-
-	listener, err := net.Listen("tcp", opts.addr)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = listener.Close()
-	}()
 
 	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
@@ -193,12 +242,12 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, labPath string, opts
 	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Lab preview: %s\n", url); err != nil {
 		return err
 	}
-	if opts.watch {
+	if previewOpts.watch {
 		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "watch: reloading lab metadata and markdown on refresh"); err != nil {
 			return err
 		}
 	}
-	if opts.open {
+	if previewOpts.open {
 		_ = openBrowser(url)
 	}
 
@@ -210,53 +259,6 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, labPath string, opts
 	case err := <-errCh:
 		return err
 	}
-}
-
-func newLabStartCmd() *cobra.Command {
-	opts := lab.Options{}
-	cmd := &cobra.Command{
-		Use:   "start <lab-path>",
-		Short: "Start a local lab runtime",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			chartDir := strings.TrimSpace(opts.ChartDir)
-			chartURI := strings.TrimSpace(opts.ChartURI)
-			chartURIChanged := cmd.Flags().Changed("chart-uri")
-			chartVersion := strings.TrimSpace(opts.ChartVersion)
-			if chartDir != "" && chartURI != "" {
-				return fmt.Errorf("set either chart-dir or chart-uri, not both")
-			}
-			if chartURIChanged && chartURI == "" {
-				return fmt.Errorf("chart-uri must not be blank")
-			}
-			if chartDir == "" && chartURI == "" {
-				return fmt.Errorf("chart-dir or chart-uri must be set")
-			}
-			if cmd.Flags().Changed("chart-version") && chartVersion == "" {
-				return fmt.Errorf("chart-version must not be blank")
-			}
-			opts.ChartDir = chartDir
-			opts.ChartURI = chartURI
-			opts.ChartVersion = chartVersion
-			opts.LabPath = args[0]
-			opts.LogWriter = cmd.OutOrStdout()
-			state, err := lab.Run(cmd.Context(), opts)
-			if err != nil {
-				return err
-			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Lab %s running\nSystem namespace: %s\nWorkspace namespace: %s\nRegistry URL: %s\nRegistry username: %s\nRegistry token: %s\n", state.RunID, state.SystemNamespace, state.WorkspaceNamespace, state.RegistryURL, state.RegistryUsername, state.RegistryToken)
-			return err
-		},
-	}
-	addSharedLabFlags(cmd, &opts)
-	cmd.Flags().StringVar(&opts.ChartDir, "chart-dir", "", "Path to a local lab runtime Helm chart directory")
-	cmd.Flags().StringVar(&opts.ChartURI, "chart-uri", "", "OCI URI for the lab runtime Helm chart")
-	cmd.Flags().StringVar(&opts.ChartVersion, "chart-version", "", "Version of the lab runtime Helm chart")
-	cmd.Flags().StringVar(&opts.ValidatorRegistry, "validator-registry", lab.DefaultArtifactRegistry, "Registry for the locally built validator image")
-	cmd.Flags().StringVar(&opts.RegistryDomain, "registry-domain", lab.DefaultArtifactRegistry, "Learner registry domain passed to the lab runtime chart")
-	cmd.Flags().BoolVar(&opts.AssumeImageAccessible, "assume-image-accessible", false, "assume a non-kind cluster can pull the local validator image tag")
-	cmd.Flags().DurationVar(&opts.CheckInterval, "check-interval", 5*time.Second, "validator check interval")
-	return cmd
 }
 
 func newLabListCmd() *cobra.Command {
@@ -299,11 +301,11 @@ func newLabStatusCmd() *cobra.Command {
 	return cmd
 }
 
-func newLabStopCmd() *cobra.Command {
+func newLabCleanupCmd() *cobra.Command {
 	opts := lab.Options{}
 	cmd := &cobra.Command{
-		Use:   "stop",
-		Short: "Stop a local lab runtime",
+		Use:   "cleanup",
+		Short: "Clean up a local lab runtime",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return lab.Cleanup(cmd.Context(), opts)
@@ -349,6 +351,8 @@ header { margin-bottom: 24px; }
 h1 { font-size: 32px; line-height: 1.15; margin: 0 0 8px; }
 h2 { font-size: 20px; margin: 0 0 12px; }
 p { line-height: 1.55; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.meta span { border: 1px solid #d8dde6; border-radius: 6px; background: #fff; padding: 6px 8px; font-size: 13px; }
 .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
 .panel { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 18px; }
 .challenge-list { display: grid; gap: 8px; }
@@ -367,6 +371,12 @@ pre { white-space: pre-wrap; font: inherit; }
 <h1>{{.Title}}</h1>
 {{if .TimeLimit}}<div class="muted">{{.TimeLimit}}</div>{{end}}
 {{if .Description}}<pre>{{.Description}}</pre>{{end}}
+{{if .State}}<div class="meta">
+<span>Run {{.State.RunID}}</span>
+<span>System {{.State.SystemNamespace}}</span>
+<span>Workspace {{.State.WorkspaceNamespace}}</span>
+<span>Registry {{.State.RegistryURL}}</span>
+</div>{{end}}
 </header>
 <section class="layout">
 <nav class="panel">

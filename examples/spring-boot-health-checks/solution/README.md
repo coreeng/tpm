@@ -18,7 +18,7 @@ Start the lab locally against a kind cluster (the lab runtime is a published OCI
 For example, from the `tpm` repo root:
 
 ```sh
-tpm lab start examples/spring-boot-health-checks \
+tpm lab preview examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
