@@ -131,7 +131,11 @@ type labPreviewOptions struct {
 
 type labPreviewPage struct {
 	*lab.Lab
-	State *lab.RunState
+	State             *lab.RunState
+	Source            string
+	DescriptionSource string
+	TimeLimitSource   string
+	Challenges        []labPreviewChallenge
 }
 
 func newLabPreviewCmd() *cobra.Command {
@@ -224,7 +228,7 @@ func runLabPreview(ctx context.Context, cmd *cobra.Command, runtimeOpts *lab.Opt
 				return
 			}
 		}
-		if err := labPreviewTemplate.Execute(w, labPreviewPage{Lab: current, State: state}); err != nil {
+		if err := labPreviewTemplate.Execute(w, newLabPreviewPage(current, state)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

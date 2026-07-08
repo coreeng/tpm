@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/coreeng/tpm/pkg/builder"
-	"github.com/coreeng/tpm/pkg/module"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +34,7 @@ func newModulePreviewCmd() *cobra.Command {
 }
 
 func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string, opts *modulePreviewOptions) error {
-	var loaded *module.BuiltModule
+	var loaded *modulePreviewPage
 	var err error
 	if !opts.watch {
 		loaded, err = compilePreviewModule(modulePath)
@@ -99,9 +98,12 @@ func runModulePreview(ctx context.Context, cmd *cobra.Command, modulePath string
 	}
 }
 
-func compilePreviewModule(modulePath string) (*module.BuiltModule, error) {
-	_, _, built, err := builder.Compile(modulePath, "", "")
-	return built, err
+func compilePreviewModule(modulePath string) (*modulePreviewPage, error) {
+	mod, _, _, err := builder.Compile(modulePath, "", "")
+	if err != nil {
+		return nil, err
+	}
+	return newModulePreviewPage(mod), nil
 }
 
 var modulePreviewTemplate = mustPreviewTemplate("module_preview.tmpl")

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/coreeng/tpm/pkg/builder"
+	"github.com/coreeng/tpm/pkg/lab"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -157,17 +157,52 @@ func TestModulePreviewHelpAndTemplate(t *testing.T) {
 	}
 
 	fixture := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
-	_, _, built, err := builder.Compile(fixture, "", "")
+	page, err := compilePreviewModule(fixture)
 	if err != nil {
-		t.Fatalf("Compile fixture returned error: %v", err)
+		t.Fatalf("compilePreviewModule fixture returned error: %v", err)
 	}
 	var rendered bytes.Buffer
-	if err := modulePreviewTemplate.Execute(&rendered, built); err != nil {
+	if err := modulePreviewTemplate.Execute(&rendered, page); err != nil {
 		t.Fatalf("module preview template returned error: %v", err)
 	}
-	for _, want := range []string{"Kubernetes 101", `<span class="toc-number">1.</span>`, `<span class="toc-number">2.</span>`, `<span class="toc-number">3.</span>`, "Cluster fundamentals", "Pods, Deployments, and Services", "Kubernetes operations check"} {
+	for _, want := range []string{
+		"Kubernetes 101",
+		`<span class="toc-number">1.</span>`,
+		`<span class="toc-number">2.</span>`,
+		`<span class="toc-number">3.</span>`,
+		"Cluster fundamentals",
+		"Pods, Deployments, and Services",
+		"Kubernetes operations check",
+		"What does a Deployment primarily manage?",
+		"module/module.yaml",
+		"module/description.md",
+		"module/01-cluster-fundamentals/chapter.yml",
+		"module/01-cluster-fundamentals/01-what-is-kubernetes/section.yaml",
+		"module/01-cluster-fundamentals/01-what-is-kubernetes/description.md",
+	} {
 		if !strings.Contains(rendered.String(), want) {
 			t.Fatalf("module preview render does not contain %q:\n%s", want, rendered.String())
+		}
+	}
+}
+
+func TestLabPreviewTemplateRendersSources(t *testing.T) {
+	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
+	if err != nil {
+		t.Fatalf("Load example lab returned error: %v", err)
+	}
+	var rendered bytes.Buffer
+	if err := labPreviewTemplate.Execute(&rendered, newLabPreviewPage(loaded, nil)); err != nil {
+		t.Fatalf("lab preview template returned error: %v", err)
+	}
+	for _, want := range []string{
+		"Spring Boot Health Checks",
+		"Deploy the app and reach Ready",
+		"lab.yaml",
+		`class="source-badge"`,
+	} {
+		if !strings.Contains(rendered.String(), want) {
+			t.Fatalf("lab preview render does not contain %q:\n%s", want, rendered.String())
 		}
 	}
 }
