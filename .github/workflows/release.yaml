@@ -2,11 +2,13 @@ name: Release
 
 # Automatically incremented, semantic-versioned releases.
 #
-# On every push to main this workflow computes the next semver tag (bumping
-# major/minor/patch from Conventional Commit messages, defaulting to patch),
-# creates the tag, and runs GoReleaser to publish binaries, checksums and the
-# Homebrew formula. Tagging + release run in one job so no Personal Access
-# Token is needed (a tag pushed by GITHUB_TOKEN does not retrigger workflows).
+# On every push to main this workflow analyzes commits since the previous tag.
+# Because this repo uses squash-only merges with the PR title and body as the
+# squash commit, each PR normally defines the release impact. If no commit asks
+# for a major or minor release, the action falls back to a patch release.
+# GoReleaser publishes binaries, checksums and the Homebrew formula. Tagging +
+# release run in one job so no Personal Access Token is needed (a tag pushed by
+# GITHUB_TOKEN does not retrigger workflows).
 #
 # To cut a release at an explicit version instead, push a tag manually:
 #   git tag v1.2.3 && git push origin v1.2.3

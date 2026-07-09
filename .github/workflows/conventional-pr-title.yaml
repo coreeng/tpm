@@ -1,0 +1,141 @@
+name: Conventional PR Title
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - ready_for_review
+      - synchronize
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    env:
+      COMMENT_MARKER: "<!-- tpm-conventional-pr-title -->"
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      REPOSITORY: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check title format
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([A-Za-z0-9._/-]+\))?: .+'
+          title_pattern='^([a-z]+)(\([A-Za-z0-9._/-]+\))?: .+'
+          pr_body="$(jq -r '.pull_request.body // ""' "${GITHUB_EVENT_PATH}")"
+
+          existing_comment_id="$(
+            gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --jq ".[] | select(.user.type == \"Bot\" and (.body | contains(\"${COMMENT_MARKER}\"))) | .id" \
+              | head -n 1
+          )"
+
+          upsert_comment() {
+            local body="$1"
+            if [[ -n "${existing_comment_id}" ]]; then
+              gh api "repos/${REPOSITORY}/issues/comments/${existing_comment_id}" \
+                -X PATCH \
+                -f body="${body}" \
+                >/dev/null
+            else
+              gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+                -f body="${body}" \
+                >/dev/null
+            fi
+          }
+
+          if [[ "${PR_TITLE}" =~ ${pattern} ]]; then
+            title_type=""
+            if [[ "${PR_TITLE}" =~ ${title_pattern} ]]; then
+              title_type="${BASH_REMATCH[1]}"
+            fi
+
+            has_breaking_body=false
+            if grep -Eq '^BREAKING CHANGE:' <<< "${pr_body}"; then
+              has_breaking_body=true
+            fi
+
+            release_type="patch"
+            case "${title_type}" in
+              feat)
+                release_type="minor"
+                ;;
+            esac
+
+            if [[ "${has_breaking_body}" == "true" ]]; then
+              release_type="major"
+            fi
+
+            comment_body="$(cat <<EOF
+          ${COMMENT_MARKER}
+          ## This PR will publish a ${release_type} release
+
+          The PR title uses the supported Conventional Commit format:
+
+          \`\`\`text
+          ${PR_TITLE}
+          \`\`\`
+
+          When this PR is squash-merged, the release workflow is expected to publish a **${release_type}** version bump.
+
+          Bump mapping:
+
+          - Major release: add a \`BREAKING CHANGE:\` section to the PR body.
+          - Minor release: use a \`feat:\` title.
+          - Patch release: use \`fix:\`, \`perf:\`, or any other supported title type. The release workflow falls back to patch when the PR does not request major or minor.
+
+          Supported title types: \`build\`, \`chore\`, \`ci\`, \`docs\`, \`feat\`, \`fix\`, \`perf\`, \`refactor\`, \`revert\`, \`style\`, \`test\`.
+          EOF
+          )"
+
+            upsert_comment "${comment_body}"
+            echo "PR title is conventional and will create a ${release_type} release."
+            exit 0
+          fi
+
+          comment_body="$(cat <<EOF
+          ${COMMENT_MARKER}
+          ## Please update the PR title
+
+          This repository uses the PR title as the squash commit title on \`main\`. Release automation reads that squash commit title, and the PR body, to decide which version to publish.
+
+          Use this supported shape:
+
+          \`\`\`text
+          type(optional-scope): short description
+          \`\`\`
+
+          Good examples:
+
+          \`\`\`text
+          fix: handle missing lab state
+          feat(preview): add module preview
+          ci(release): require conventional release commits
+          \`\`\`
+
+          Choose the title based on the release you want:
+
+          - Patch release: use \`fix:\`, \`perf:\`, or any other supported title type.
+          - Minor release: use \`feat:\`.
+          - Major release: add a \`BREAKING CHANGE:\` section to the PR body.
+
+          The release workflow falls back to patch when the PR does not request major or minor.
+
+          Allowed types: \`build\`, \`chore\`, \`ci\`, \`docs\`, \`feat\`, \`fix\`, \`perf\`, \`refactor\`, \`revert\`, \`style\`, \`test\`.
+          EOF
+          )"
+
+          upsert_comment "${comment_body}"
+
+          echo "PR title must use the supported Conventional Commit format." >&2
+          echo "Current title: ${PR_TITLE}" >&2
+          exit 1

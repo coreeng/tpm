@@ -134,6 +134,11 @@ make install  # Install to GOPATH/bin
 CI runs Trivy (vulnerability, secret, config, and license scanning) and CodeQL (Go SAST)
 on every pull request and push to `main`.
 
+## Releases
+
+Release versions are based on Conventional Commit PR titles. See
+[docs/release-policy.md](docs/release-policy.md) for the title format and version bump rules.
+
 ## Licence
 
 Licensed under the Apache License, Version 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
