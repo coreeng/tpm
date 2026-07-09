@@ -69,6 +69,21 @@ are **embedded in the binary**, so validation works anywhere with no external fi
 required. To validate against a different schema set while developing `tpm`, pass
 `--schema-dir <path>`.
 
+## Examples
+
+The [`examples/`](examples/) directory contains complete source examples:
+
+- [`examples/modules/kubernetes-101/`](examples/modules/kubernetes-101/) is a three-chapter
+  module covering Kubernetes cluster basics, workloads, and application operations.
+- [`examples/labs/spring-boot-health-checks/`](examples/labs/spring-boot-health-checks/) is a
+  standalone lab where learners add Spring Boot health checks and Kubernetes probes.
+
+Preview the module locally:
+
+```bash
+tpm module preview examples/modules/kubernetes-101 --watch
+```
+
 ## Authoring labs with an AI assistant
 
 The preferred way to author labs with an AI assistant is to install the
@@ -85,18 +100,18 @@ git clone git@github.com:coreeng/tpm-authoring-labs-skill.git ~/.config/opencode
 
 ## Example lab
 
-[`examples/spring-boot-health-checks/`](examples/spring-boot-health-checks/) is a complete,
+[`examples/labs/spring-boot-health-checks/`](examples/labs/spring-boot-health-checks/) is a complete,
 working example lab — "add Spring Boot health checks to an application" — authored with the
 [`authoring-labs`](https://github.com/coreeng/tpm-authoring-labs-skill) skill. It shows the
 full lab layout and a `validator/` that checks the learner's running workload.
 
-- [Learner task](examples/spring-boot-health-checks/starter-content/README.md) — what the learner starts with and has to do.
-- [Reference solution](examples/spring-boot-health-checks/solution/README.md) — the completed implementation.
+- [Learner task](examples/labs/spring-boot-health-checks/starter-content/README.md) — what the learner starts with and has to do.
+- [Reference solution](examples/labs/spring-boot-health-checks/solution/README.md) — the completed implementation.
 
 Run it locally against a kind cluster (the lab runtime is published as an OCI Helm chart):
 
 ```bash
-tpm lab preview examples/spring-boot-health-checks \
+tpm lab preview examples/labs/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 

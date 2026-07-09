@@ -11,7 +11,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'examples/spring-boot-health-checks/**'
+      - 'examples/labs/spring-boot-health-checks/**'
       - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
       - 'cmd/lab*.go'
@@ -22,7 +22,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'examples/spring-boot-health-checks/**'
+      - 'examples/labs/spring-boot-health-checks/**'
       - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
       - 'cmd/lab*.go'
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      LAB_PATH: examples/spring-boot-health-checks
+      LAB_PATH: examples/labs/spring-boot-health-checks
       CHART_URI: oci://ghcr.io/coreeng/charts/training-platform-assessment
       CHART_VERSION: ${{ github.event.inputs.chart_version || '0.0.249' }}
     steps:

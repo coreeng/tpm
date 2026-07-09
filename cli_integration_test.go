@@ -12,24 +12,24 @@ func TestCLIRealCommandsAgainstFixtures(t *testing.T) {
 	tempDir := t.TempDir()
 	bin := filepath.Join(tempDir, "tpm")
 	// #nosec G204 -- integration test builds the local package with a fixed executable.
-	if output, err := exec.Command("go", "build", "-o", bin, ".").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-buildvcs=false", "-o", bin, ".").CombinedOutput(); err != nil {
 		t.Fatalf("go build failed: %v\n%s", err, output)
 	}
 
 	modulesDir := filepath.Join(tempDir, "modules")
-	modulePath := filepath.Join(modulesDir, "simple-module")
-	copyIntegrationDir(t, filepath.Join("pkg", "builder", "testdata", "simple-module"), modulePath)
+	modulePath := filepath.Join(modulesDir, "kubernetes-101")
+	copyIntegrationDir(t, filepath.Join("examples", "modules", "kubernetes-101"), modulePath)
 
 	output := runCLI(t, bin, "module", "list", modulesDir)
-	if strings.TrimSpace(output) != "simple-module" {
-		t.Fatalf("module list output = %q, want simple-module", output)
+	if strings.TrimSpace(output) != "kubernetes-101" {
+		t.Fatalf("module list output = %q, want kubernetes-101", output)
 	}
 
 	outRoot := filepath.Join(tempDir, "artifacts")
 	output = runCLI(t, bin, "module", "build", modulePath, "--out-root", outRoot)
-	artifactPath := filepath.Join(outRoot, "simple-module", "module.yaml")
+	artifactPath := filepath.Join(outRoot, "kubernetes-101", "module.yaml")
 	assertIntegrationFileExists(t, artifactPath)
-	if !strings.Contains(output, "simple-module -> "+artifactPath) {
+	if !strings.Contains(output, "kubernetes-101 -> "+artifactPath) {
 		t.Fatalf("module build output does not include artifact path:\n%s", output)
 	}
 

@@ -2,7 +2,8 @@
 
 # Binary name
 BINARY_NAME=tpm
-EXAMPLE_VALIDATOR_DIR=examples/spring-boot-health-checks/validator
+GO_BUILD_FLAGS?=-buildvcs=false
+EXAMPLE_VALIDATOR_DIR=examples/labs/spring-boot-health-checks/validator
 GOVULNCHECK_VERSION=v1.5.0
 GOVULNCHECK=go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
 PREVIEW_UI_DIR=web/preview
@@ -10,7 +11,7 @@ PREVIEW_UI_DIR=web/preview
 # Build the binary
 build:
 	@echo "Building $(BINARY_NAME)..."
-	go build -o $(BINARY_NAME) .
+	go build $(GO_BUILD_FLAGS) -o $(BINARY_NAME) .
 
 # Run tests
 test:
@@ -60,7 +61,7 @@ check: verify-tidy preview-ui-build lint security-lint test vulncheck build
 # Install binary to GOPATH
 install:
 	@echo "Installing $(BINARY_NAME) to GOPATH/bin..."
-	go install .
+	go install $(GO_BUILD_FLAGS) .
 
 # Clean build artifacts
 clean:

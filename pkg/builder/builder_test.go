@@ -10,17 +10,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestBuild_SimpleModule(t *testing.T) {
+func TestBuild_Kubernetes101Module(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	result, err := Build("testdata/simple-module", outDir, "", "")
+	result, err := Build("../../examples/modules/kubernetes-101", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Verify output file exists
-	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	outFile := filepath.Join(outDir, "kubernetes-101", "module.yaml")
 	if result.OutputFile != outFile {
 		t.Fatalf("OutputFile = %s, want %s", result.OutputFile, outFile)
 	}
@@ -142,7 +142,7 @@ func TestBuild_IsDraftFalsePreserved(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	_, err := Build("testdata/simple-module", outDir, "", "")
+	_, err := Build("../../examples/modules/kubernetes-101", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestBuild_IsDraftFalsePreserved(t *testing.T) {
 	// Load and verify the output
 	var mod module.BuiltModule
 	// #nosec G304 -- test reads the output path it just built.
-	data, err := os.ReadFile(filepath.Join(outDir, "simple-module", "module.yaml"))
+	data, err := os.ReadFile(filepath.Join(outDir, "kubernetes-101", "module.yaml"))
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}

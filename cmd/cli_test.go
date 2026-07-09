@@ -57,12 +57,12 @@ func TestModuleInitListValidateBuildAndArtifactValidate(t *testing.T) {
 		t.Fatalf("module list output = %q, want demo-module", output)
 	}
 
-	fixture := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
+	fixture := filepath.Join("..", "examples", "modules", "kubernetes-101")
 	output, err = executeRootCommand("module", "validate", fixture)
 	if err != nil {
 		t.Fatalf("module validate returned error: %v\n%s", err, output)
 	}
-	if !strings.Contains(output, "simple-module: ok") {
+	if !strings.Contains(output, "kubernetes-101: ok") {
 		t.Fatalf("module validate output does not report ok:\n%s", output)
 	}
 
@@ -71,9 +71,9 @@ func TestModuleInitListValidateBuildAndArtifactValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("module build returned error: %v\n%s", err, output)
 	}
-	artifactPath := filepath.Join(outRoot, "simple-module", "module.yaml")
+	artifactPath := filepath.Join(outRoot, "kubernetes-101", "module.yaml")
 	assertCmdFileExists(t, artifactPath)
-	if !strings.Contains(output, "simple-module -> "+artifactPath) {
+	if !strings.Contains(output, "kubernetes-101 -> "+artifactPath) {
 		t.Fatalf("module build output does not report artifact path:\n%s", output)
 	}
 
@@ -159,7 +159,7 @@ func TestModulePreviewHelpAndPayload(t *testing.T) {
 		}
 	}
 
-	fixture := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
+	fixture := filepath.Join("..", "examples", "modules", "kubernetes-101")
 	page, err := compilePreviewModule(fixture)
 	if err != nil {
 		t.Fatalf("compilePreviewModule fixture returned error: %v", err)
@@ -188,7 +188,7 @@ func TestModulePreviewHelpAndPayload(t *testing.T) {
 }
 
 func TestLabPreviewPayloadRendersSources(t *testing.T) {
-	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
+	loaded, err := lab.Load(filepath.Join("..", "examples", "labs", "spring-boot-health-checks"))
 	if err != nil {
 		t.Fatalf("Load example lab returned error: %v", err)
 	}
@@ -230,7 +230,7 @@ func TestLabPreviewPayloadRendersSources(t *testing.T) {
 }
 
 func TestLabPreviewPayloadIncludesRuntimeToken(t *testing.T) {
-	loaded, err := lab.Load(filepath.Join("..", "examples", "spring-boot-health-checks"))
+	loaded, err := lab.Load(filepath.Join("..", "examples", "labs", "spring-boot-health-checks"))
 	if err != nil {
 		t.Fatalf("Load example lab returned error: %v", err)
 	}
@@ -504,8 +504,8 @@ func assertCmdFileExists(t *testing.T, path string) {
 
 func copyCmdFixtureModule(t *testing.T) string {
 	t.Helper()
-	src := filepath.Join("..", "pkg", "builder", "testdata", "simple-module")
-	dst := filepath.Join(t.TempDir(), "simple-module")
+	src := filepath.Join("..", "examples", "modules", "kubernetes-101")
+	dst := filepath.Join(t.TempDir(), "kubernetes-101")
 	copyCmdDir(t, src, dst)
 	return dst
 }
