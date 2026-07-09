@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -94,8 +95,21 @@ func TestCompareReportsDuplicateCodesClearly(t *testing.T) {
 }
 
 func TestCompareSupportsPathAtGitRef(t *testing.T) {
-	fixture := filepath.Join("..", "builder", "testdata", "simple-module")
-	report, err := Compare(fixture+"@HEAD", fixture+"@HEAD")
+	repoDir := t.TempDir()
+	repoDir, err := filepath.EvalSymlinks(repoDir)
+	if err != nil {
+		t.Fatalf("resolve temp repo path: %v", err)
+	}
+	fixture := filepath.Join(repoDir, "kubernetes-101")
+	copyDir(t, filepath.Join("..", "..", "examples", "modules", "kubernetes-101"), fixture)
+	git(t, repoDir, "init")
+	git(t, repoDir, "config", "user.email", "test@example.com")
+	git(t, repoDir, "config", "user.name", "Test User")
+	git(t, repoDir, "add", ".")
+	git(t, repoDir, "commit", "-m", "add fixture module")
+	t.Chdir(repoDir)
+
+	report, err := Compare("./kubernetes-101@HEAD", "./kubernetes-101@HEAD")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,10 +161,21 @@ func TestUntarExtractsSafeArchiveEntries(t *testing.T) {
 
 func copyFixtureModule(t *testing.T) string {
 	t.Helper()
-	src := filepath.Join("..", "builder", "testdata", "simple-module")
-	dst := filepath.Join(t.TempDir(), "simple-module")
+	src := filepath.Join("..", "..", "examples", "modules", "kubernetes-101")
+	dst := filepath.Join(t.TempDir(), "kubernetes-101")
 	copyDir(t, src, dst)
 	return dst
+}
+
+func git(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	// #nosec G204 -- test invokes the fixed git executable with test-controlled arguments.
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %s failed: %v\n%s", strings.Join(args, " "), err, output)
+	}
 }
 
 func tarBuffer(t *testing.T, name, contents string) *bytes.Reader {

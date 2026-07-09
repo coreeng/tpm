@@ -123,8 +123,8 @@ func TestChapterAuthoringSupportsYamlExtension(t *testing.T) {
 
 func copyAuthoringFixture(t *testing.T) string {
 	t.Helper()
-	src := filepath.Join("..", "builder", "testdata", "simple-module")
-	dst := filepath.Join(t.TempDir(), "simple-module")
+	src := filepath.Join("..", "..", "examples", "modules", "kubernetes-101")
+	dst := filepath.Join(t.TempDir(), "kubernetes-101")
 	copyAuthoringDir(t, src, dst)
 	return dst
 }

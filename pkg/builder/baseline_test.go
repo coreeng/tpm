@@ -18,13 +18,13 @@ func TestBuildModule_Baseline(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	_, err := Build("testdata/simple-module", outDir, "", "")
+	_, err := Build("../../examples/modules/kubernetes-101", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	outFile := filepath.Join(outDir, "kubernetes-101", "module.yaml")
 	// #nosec G304 -- test reads the output path it just built.
 	actualBytes, err := os.ReadFile(outFile)
 	if err != nil {
@@ -32,7 +32,7 @@ func TestBuildModule_Baseline(t *testing.T) {
 	}
 
 	// Baseline path (relative to current test directory)
-	baselinePath := filepath.Join("testdata", "simple-module", "baseline-module.yaml")
+	baselinePath := filepath.Join("testdata", "kubernetes-101-baseline-module.yaml")
 
 	// If update flag is set, write the baseline and exit
 	if *updateBaseline {
@@ -68,7 +68,7 @@ func TestBuildModule_Baseline(t *testing.T) {
 			"To update baseline, run: go test -run TestBuildModule_Baseline -update-baseline", diff)
 
 		// Also write the actual output for debugging
-		debugPath := filepath.Join("simple-module", "actual-output.yaml")
+		debugPath := filepath.Join("kubernetes-101", "actual-output.yaml")
 		// #nosec G703 -- debugPath is a controlled test debug-output path.
 		if err := os.WriteFile(debugPath, actualBytes, 0600); err == nil {
 			t.Logf("Actual output written to: %s", debugPath)
@@ -111,13 +111,13 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	_, err := Build("testdata/simple-module", outDir, "", "")
+	_, err := Build("../../examples/modules/kubernetes-101", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	outFile := filepath.Join(outDir, "kubernetes-101", "module.yaml")
 	// #nosec G304 -- test reads the output path it just built.
 	data, err := os.ReadFile(outFile)
 	if err != nil {
