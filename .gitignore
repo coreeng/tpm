@@ -32,6 +32,7 @@ node_modules/
 # Frontend local cache/default output
 web/preview/.cache/
 web/preview/.vite/
+web/preview/.yarn/
 web/preview/dist/
 
 # tpm lab run state

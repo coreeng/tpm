@@ -3,7 +3,8 @@
 # Binary name
 BINARY_NAME=tpm
 EXAMPLE_VALIDATOR_DIR=examples/spring-boot-health-checks/validator
-GOVULNCHECK=go run golang.org/x/vuln/cmd/govulncheck@latest
+GOVULNCHECK_VERSION=v1.5.0
+GOVULNCHECK=go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
 PREVIEW_UI_DIR=web/preview
 
 # Build the binary
@@ -50,8 +51,8 @@ verify-tidy:
 # Build the React/Tailwind preview UI embedded by the Go binary.
 preview-ui-build:
 	@echo "Building preview UI..."
-	npm --prefix $(PREVIEW_UI_DIR) ci
-	npm --prefix $(PREVIEW_UI_DIR) run build
+	cd $(PREVIEW_UI_DIR) && yarn install --immutable
+	cd $(PREVIEW_UI_DIR) && yarn build
 
 # Run the full local quality gate before opening or updating a PR.
 check: verify-tidy preview-ui-build lint security-lint test vulncheck build
@@ -73,7 +74,7 @@ deps:
 	go mod download
 	go mod tidy
 	cd $(EXAMPLE_VALIDATOR_DIR) && go mod download && go mod tidy
-	npm --prefix $(PREVIEW_UI_DIR) install
+	cd $(PREVIEW_UI_DIR) && yarn install
 
 # Display help
 help:
