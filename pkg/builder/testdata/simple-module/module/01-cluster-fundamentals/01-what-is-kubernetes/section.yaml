@@ -1,0 +1,4 @@
+code: what-is-kubernetes
+title: What Kubernetes manages
+shortDescription: Learn how Kubernetes turns declared desired state into running workloads.
+estimatedDuration: 15m

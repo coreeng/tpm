@@ -53,11 +53,6 @@
       },
       "description": "Array of categorization tags for the module. At least one tag is required.",
       "examples": [["devops", "cicd", "production"]]
-    },
-    "video": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional URL to a module overview or introduction video."
     }
   },
   "additionalProperties": false,

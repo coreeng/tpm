@@ -41,10 +41,16 @@ func loadStandalone(rootPath, metadataPath string) (*Lab, error) {
 }
 
 func loadModuleBacked(metadataRoot, runtimePath string) (*Lab, error) {
-	metadataPath := filepath.Join(metadataRoot, "assessment.yaml")
+	metadataPath := findAssessmentFile(metadataRoot)
+	if metadataPath == "" {
+		return nil, fmt.Errorf("assessment metadata not found in %q: %w", metadataRoot, os.ErrNotExist)
+	}
 	var loaded Lab
 	if err := loadYAML(metadataPath, &loaded); err != nil {
 		return nil, err
+	}
+	if description, err := readOptionalText(filepath.Join(metadataRoot, "description.md")); err == nil {
+		loaded.Description = description
 	}
 	challenges, err := loadChallenges(metadataRoot)
 	if err != nil {
@@ -111,6 +117,13 @@ func loadChallenges(metadataRoot string) ([]Challenge, error) {
 		if err := loadYAML(challengePath, &challenge); err != nil {
 			return nil, err
 		}
+		challengeRoot := filepath.Dir(challengePath)
+		if description, err := readOptionalText(filepath.Join(challengeRoot, "description.md")); err == nil {
+			challenge.Description = description
+		}
+		if successMessage, err := readOptionalText(filepath.Join(challengeRoot, "successMessage.md")); err == nil {
+			challenge.SuccessMessage = successMessage
+		}
 		loaded = append(loaded, loadedChallenge{dirName: entry.Name(), challenge: challenge})
 	}
 	sort.Slice(loaded, func(i, j int) bool {
@@ -124,6 +137,16 @@ func loadChallenges(metadataRoot string) ([]Challenge, error) {
 	return challenges, nil
 }
 
+func findAssessmentFile(path string) string {
+	for _, name := range []string{"assessment.yaml", "assessment.yml"} {
+		candidate := filepath.Join(path, name)
+		if fileExists(candidate) {
+			return candidate
+		}
+	}
+	return ""
+}
+
 func findChallengeFile(path string) string {
 	for _, name := range []string{"challenge.yaml", "challenge.yml"} {
 		candidate := filepath.Join(path, name)
@@ -135,11 +158,21 @@ func findChallengeFile(path string) string {
 }
 
 func loadYAML(path string, into any) error {
+	// #nosec G304 -- lab loading intentionally reads local lab YAML selected by the CLI user.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	return yaml.Unmarshal(contents, into)
+}
+
+func readOptionalText(path string) (string, error) {
+	// #nosec G304 -- lab loading intentionally reads optional markdown from the selected local lab tree.
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(contents), nil
 }
 
 func fileExists(path string) bool {

@@ -90,10 +90,10 @@ func writeFiles(dir string, files map[string]string) error {
 
 	for name, contents := range files {
 		path := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
 			return fmt.Errorf("create parent for %s: %w", path, err)
 		}
-		if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
 			return fmt.Errorf("write %s: %w", path, err)
 		}
 	}

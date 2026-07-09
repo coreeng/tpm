@@ -190,12 +190,12 @@ func cleanupTestState(labPath string) RunState {
 func createLabDirs(t *testing.T, labPath string) {
 	t.Helper()
 	for _, name := range []string{"starter-content", "solution", "validator"} {
-		if err := os.MkdirAll(filepath.Join(labPath, name), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(labPath, name), 0700); err != nil {
 			t.Fatalf("create %s dir: %v", name, err)
 		}
 	}
 	metadata := []byte("title: Create ConfigMap\ncode: create-config-map\ntimeLimit: 30m\n")
-	if err := os.WriteFile(filepath.Join(labPath, "lab.yaml"), metadata, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(labPath, "lab.yaml"), metadata, 0600); err != nil {
 		t.Fatalf("write lab metadata: %v", err)
 	}
 }

@@ -20,12 +20,25 @@ type GenerateResult struct {
 // GenerateMissingCodes generates UUIDs for any entities that are missing a code field
 // This function ONLY adds codes where they are missing - it never replaces existing codes
 func GenerateMissingCodes(rootDir, moduleName string) (*GenerateResult, error) {
+	return generateMissingCodesFromModule(func() (*module.Module, error) {
+		return module.LoadModule(rootDir, moduleName)
+	})
+}
+
+func GenerateMissingCodesPath(modulePath string) (*GenerateResult, error) {
+	return generateMissingCodesFromModule(func() (*module.Module, error) {
+		mod, _, err := module.LoadPath(modulePath)
+		return mod, err
+	})
+}
+
+func generateMissingCodesFromModule(load func() (*module.Module, error)) (*GenerateResult, error) {
 	result := &GenerateResult{
 		FilesModified: make([]string, 0),
 	}
 
 	// Load the module
-	mod, err := module.LoadModule(rootDir, moduleName)
+	mod, err := load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load module: %w", err)
 	}
@@ -121,6 +134,7 @@ func GenerateMissingCodes(rootDir, moduleName string) (*GenerateResult, error) {
 // Returns (modified, count, error)
 func generateGoalCodes(filePath string, goals []module.Goal) (bool, int, error) {
 	// Read the file
+	// #nosec G304 -- codegen intentionally edits local module YAML paths selected by the CLI user.
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return false, 0, fmt.Errorf("failed to read file: %w", err)
@@ -186,7 +200,7 @@ func generateGoalCodes(filePath string, goals []module.Goal) (bool, int, error) 
 			return false, 0, fmt.Errorf("failed to marshal YAML: %w", err)
 		}
 
-		if err := os.WriteFile(filePath, output, 0644); err != nil {
+		if err := os.WriteFile(filePath, output, 0600); err != nil {
 			return false, 0, fmt.Errorf("failed to write file: %w", err)
 		}
 	}
@@ -199,6 +213,7 @@ func generateGoalCodes(filePath string, goals []module.Goal) (bool, int, error) 
 // Returns (modified, count, error)
 func generateMCQCodes(filePath string, mcqs []module.MultipleChoiceAssessment) (bool, int, error) {
 	// Read the file
+	// #nosec G304 -- codegen intentionally edits local module YAML paths selected by the CLI user.
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return false, 0, fmt.Errorf("failed to read file: %w", err)
@@ -320,7 +335,7 @@ func generateMCQCodes(filePath string, mcqs []module.MultipleChoiceAssessment) (
 			return false, 0, fmt.Errorf("failed to marshal YAML: %w", err)
 		}
 
-		if err := os.WriteFile(filePath, output, 0644); err != nil {
+		if err := os.WriteFile(filePath, output, 0600); err != nil {
 			return false, 0, fmt.Errorf("failed to write file: %w", err)
 		}
 	}

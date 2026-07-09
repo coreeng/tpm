@@ -157,8 +157,41 @@ func TestStatusSortsConditions(t *testing.T) {
 	completedIndex := assertStatusContainsToken(t, status, "Completed")
 	customLabIndex := assertStatusContainsToken(t, status, "Custom")
 	unknownIndex := assertStatusContainsToken(t, status, "ZZ_Custom")
-	if !(readyIndex < challengeIndex && challengeIndex < goalIndex && goalIndex < completedIndex && completedIndex < customLabIndex && customLabIndex < unknownIndex) {
+	if readyIndex >= challengeIndex || challengeIndex >= goalIndex || goalIndex >= completedIndex || completedIndex >= customLabIndex || customLabIndex >= unknownIndex {
 		t.Fatalf("conditions not sorted by type in status:\n%s", status)
+	}
+}
+
+func TestProgressConditionsForStateFiltersAndSortsLabConditions(t *testing.T) {
+	ctx := context.Background()
+	state := RunState{RunID: "abc123", SystemNamespace: "lab-abc123-system"}
+	runner := NewFakeRunner()
+	runner.QueueResponse([]byte(`{
+		"items": [{
+			"metadata": {"name": "validator-abc123"},
+			"status": {"conditions": [
+				{"type": "ContainersReady", "status": "True"},
+				{"type": "IAG_DeployPodFromImage_PodUsesBuiltImage", "status": "True", "reason": "Satisfied", "message": "Pod uses the built image"},
+				{"type": "IA_Completed", "status": "False", "reason": "Incomplete", "message": "Lab is still in progress"},
+				{"type": "IAC_DeployPodFromImage", "status": "False", "reason": "WaitingForGoals", "message": "Challenge is waiting for goals"},
+				{"type": "IA_Ready", "status": "True", "reason": "Ready", "message": "Validator is ready"}
+			]}
+		}]
+	}`), nil)
+
+	conditions, err := ProgressConditionsForState(ctx, runner, state)
+	if err != nil {
+		t.Fatalf("ProgressConditionsForState returned error: %v", err)
+	}
+
+	want := []ProgressCondition{
+		{Type: "IA_Ready", Status: "True", Reason: "Ready", Message: "Validator is ready"},
+		{Type: "IAC_DeployPodFromImage", Status: "False", Reason: "WaitingForGoals", Message: "Challenge is waiting for goals"},
+		{Type: "IAG_DeployPodFromImage_PodUsesBuiltImage", Status: "True", Reason: "Satisfied", Message: "Pod uses the built image"},
+		{Type: "IA_Completed", Status: "False", Reason: "Incomplete", Message: "Lab is still in progress"},
+	}
+	if diff := cmp.Diff(want, conditions); diff != "" {
+		t.Fatalf("conditions mismatch (-want +got):\n%s", diff)
 	}
 }
 

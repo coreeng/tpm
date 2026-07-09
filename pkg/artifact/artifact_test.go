@@ -20,9 +20,6 @@ chapters:
     index: 1
     title: Test Chapter
     description: A test chapter
-    shortDescription: Test chapter
-    bannerImage: https://example.com/chapter.png
-    bannerVideo: https://example.com/chapter.mp4
     isDraft: true
     sections:
       - code: test-section-789
@@ -32,6 +29,8 @@ chapters:
         shortDescription: A brief test section
         video: https://example.com/video.mp4
         estimatedDuration: 30m
+        prerequisites:
+          - Know how to open the module
     assessments: []
     multipleChoiceAssessments: []
 `
@@ -39,7 +38,7 @@ chapters:
 func TestResolveModuleArtifactPathAcceptsFileAndDirectory(t *testing.T) {
 	dir := t.TempDir()
 	artifactPath := filepath.Join(dir, ModuleArtifactFile)
-	if err := os.WriteFile(artifactPath, []byte(validBuiltModule), 0o644); err != nil {
+	if err := os.WriteFile(artifactPath, []byte(validBuiltModule), 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 
@@ -62,7 +61,7 @@ func TestResolveModuleArtifactPathAcceptsFileAndDirectory(t *testing.T) {
 
 func TestValidateModuleArtifactUsesEmbeddedBuiltSchema(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), []byte(validBuiltModule), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), []byte(validBuiltModule), 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 
@@ -80,7 +79,7 @@ func TestValidateModuleArtifactReportsSchemaErrors(t *testing.T) {
 	invalid := []byte(`code: test-module-123
 title: Test Module
 `)
-	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), invalid, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, ModuleArtifactFile), invalid, 0o600); err != nil {
 		t.Fatalf("write artifact: %v", err)
 	}
 

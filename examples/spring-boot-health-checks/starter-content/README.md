@@ -31,7 +31,7 @@ Start the lab locally against a kind cluster (the lab runtime is a published OCI
 For example, from the `tpm` repo root:
 
 ```sh
-tpm lab run examples/spring-boot-health-checks \
+tpm lab preview examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
@@ -43,7 +43,7 @@ specific chart version.
 
 > [!TIP]
 > `<workspace-namespace>` is the workspace namespace for your lab run. It is printed by
-> `tpm lab run` (the `Workspace namespace:` line) and is also shown by
+> `tpm lab preview` (the `Workspace namespace:` line) and is also shown by
 > `tpm lab status --id <run-id>`. It looks like `lab-<run-id>-workspace`.
 
 For kind:

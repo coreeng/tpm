@@ -1,0 +1,8 @@
+code: contract-section
+title: Contract Section
+shortDescription: A concise section summary.
+estimatedDuration: 12m
+video: https://example.com/section-video
+prerequisites:
+  - Know what a Pod is
+  - Know how to run kubectl

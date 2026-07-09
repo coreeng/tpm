@@ -2,12 +2,38 @@
 /tpm
 tpm.exe
 
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
 # GoReleaser output
 /dist/
 
 # Build artifacts / test output
 *.out
+*.test
+*.prof
 coverage.txt
+coverage.out
+coverage.html
+run-info.json
+
+# Frontend dependencies
+node_modules/
+
+# Frontend local cache/default output
+web/preview/.cache/
+web/preview/.vite/
+web/preview/.yarn/
+web/preview/dist/
 
 # tpm lab run state
 .build/

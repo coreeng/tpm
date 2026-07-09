@@ -24,15 +24,24 @@ type GenerateResult struct {
 // Note: Schema validation ensures description/successMessage fields are NOT in YAML,
 // so there is never any content to migrate from YAML to markdown.
 func GenerateMissingMarkdown(rootDir, moduleName string) (*GenerateResult, error) {
-	result := &GenerateResult{}
-
 	modulePath := module.GetModulePath(rootDir, moduleName)
-
-	// Load the module
 	mod, err := module.LoadModule(rootDir, moduleName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load module: %w", err)
 	}
+	return generateMissingMarkdownForModule(mod, modulePath)
+}
+
+func GenerateMissingMarkdownPath(modulePath string) (*GenerateResult, error) {
+	mod, resolved, err := module.LoadPath(modulePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load module: %w", err)
+	}
+	return generateMissingMarkdownForModule(mod, resolved.SourcePath)
+}
+
+func generateMissingMarkdownForModule(mod *module.Module, modulePath string) (*GenerateResult, error) {
+	result := &GenerateResult{}
 
 	// Process module description.md
 	created, err := ensureMarkdownFile(modulePath, "description.md")
@@ -126,7 +135,7 @@ func ensureMarkdownFile(dir, filename string) (bool, error) {
 
 	// File doesn't exist, create placeholder
 	content := "Placeholder\n"
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return false, fmt.Errorf("failed to create %s: %w", filename, err)
 	}
 

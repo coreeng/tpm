@@ -58,11 +58,6 @@
       },
       "description": "Categorization tags."
     },
-    "video": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional module overview video."
-    },
     "chapters": {
       "type": "array",
       "minItems": 1,
@@ -104,29 +99,9 @@
           "minLength": 1,
           "description": "Chapter description merged from description.md during build."
         },
-        "shortDescription": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Optional brief summary. NOTE: Currently unused by training platform."
-        },
-        "bannerImage": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional chapter banner image. NOTE: Currently unused by training platform."
-        },
-        "bannerVideo": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional chapter banner video. NOTE: Currently unused by training platform."
-        },
         "isDraft": {
           "type": "boolean",
           "description": "Boolean to indicate if the chapter is a draft. Set to false for published chapters."
-        },
-        "video": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional chapter introduction video."
         },
         "sections": {
           "type": "array",
@@ -196,15 +171,13 @@
           "format": "uri",
           "description": "Optional section video."
         },
-        "thumbnail": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional thumbnail image. NOTE: Currently unused by training platform."
-        },
-        "thumbnailDescription": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Optional thumbnail description. NOTE: Currently unused by training platform."
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Optional section prerequisites."
         }
       },
       "additionalProperties": false
@@ -403,11 +376,6 @@
           "minimum": 0,
           "maximum": 100,
           "description": "Minimum percentage to pass."
-        },
-        "video": {
-          "type": "string",
-          "format": "uri",
-          "description": "Optional quiz guidance video."
         },
         "questions": {
           "type": "array",

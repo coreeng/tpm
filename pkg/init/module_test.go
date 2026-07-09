@@ -48,7 +48,6 @@ func TestScaffoldModuleSkeleton(t *testing.T) {
 	chapterYAML := readFile(t, filepath.Join(dir, "config-map-module/module/01-getting-started/chapter.yml"))
 	for _, want := range []string{
 		"title: Getting Started",
-		"shortDescription: Start building local labs.",
 		"isDraft: false",
 	} {
 		if !strings.Contains(chapterYAML, want) {
@@ -58,6 +57,7 @@ func TestScaffoldModuleSkeleton(t *testing.T) {
 	for _, reject := range []string{
 		"index:",
 		"description:",
+		"shortDescription:",
 	} {
 		if strings.Contains(chapterYAML, reject) {
 			t.Fatalf("chapter.yml contains unsupported source chapter property %q", reject)
@@ -93,6 +93,7 @@ func assertFileExists(t *testing.T, path string) {
 
 func readFile(t *testing.T, path string) string {
 	t.Helper()
+	// #nosec G304 -- tests read paths constructed inside their temp directories.
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)
@@ -102,10 +103,10 @@ func readFile(t *testing.T, path string) string {
 
 func writeFile(t *testing.T, path, contents string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		t.Fatalf("create parent for %s: %v", path, err)
 	}
-	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
 }

@@ -21,20 +21,23 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache-dependency-path: go.sum
+          cache-dependency-path: |
+            go.sum
+            examples/spring-boot-health-checks/validator/go.sum
 
-      - name: Verify go.mod is tidy
-        run: |
-          go mod tidy
-          git diff --exit-code go.mod go.sum
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
 
-      - name: Vet
-        run: go vet ./...
+      - name: Enable Corepack
+        run: corepack enable
 
-      - name: Test
-        run: go test ./...
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.3
 
-      - name: Build
-        run: |
-          go build -o tpm .
-          ./tpm --help
+      - name: Check
+        run: make check
+
+      - name: Smoke CLI
+        run: ./tpm --help

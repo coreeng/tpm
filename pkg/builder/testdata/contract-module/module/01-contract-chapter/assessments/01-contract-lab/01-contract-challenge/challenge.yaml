@@ -1,0 +1,11 @@
+code: ContractChallenge
+title: Contract Challenge
+estimatedDuration: 20m
+video: https://example.com/challenge-video
+goals:
+  - code: FirstGoal
+    title: First Goal
+    description: Complete the first contract goal.
+  - code: SecondGoal
+    title: Second Goal
+    description: Complete the second contract goal.

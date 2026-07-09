@@ -48,18 +48,23 @@ tpm --version           # Show version
 Common commands:
 
 ```bash
-tpm list                            # List all modules
-tpm validate                        # Validate all modules (uses embedded source schemas)
-tpm validate-changes <old> <new>    # Check for breaking code changes between git refs
-tpm generate-codes                  # Generate missing UUID codes
-tpm generate-markdown               # Generate missing markdown files
-tpm build <module> -o <dir>         # Build a module into a unified module.yaml
-tpm validate-artifact <dir>         # Validate a compiled module.yaml artifact
-tpm init lab <path>                 # Scaffold a new lab
-tpm lab ...                         # Run and inspect local labs
+tpm module list <dir>                         # List modules directly under a directory
+tpm module validate <module-path>...          # Validate module source directories
+tpm module compare <old> <new>                # Check for breaking code changes
+tpm module generate codes <module-path>...    # Generate missing codes
+tpm module generate markdown <module-path>... # Generate missing markdown files
+tpm module build <module-path>... --out-root <dir>
+tpm module preview <module-path> --watch
+tpm artifact validate <module.yaml-or-dir>...
+tpm lab init <path>                           # Scaffold a standalone lab runtime
+tpm lab preview <path> --chart-uri <oci-uri>  # Run and preview a local lab
 ```
 
-The JSON schemas used by `tpm validate`, `tpm build`, and `tpm validate-artifact`
+See [docs/cli-reference.md](docs/cli-reference.md) for the full command reference and
+examples.
+
+The JSON schemas used by `tpm module validate`, `tpm module build`, and
+`tpm artifact validate`
 are **embedded in the binary**, so validation works anywhere with no external files
 required. To validate against a different schema set while developing `tpm`, pass
 `--schema-dir <path>`.
@@ -91,7 +96,7 @@ full lab layout and a `validator/` that checks the learner's running workload.
 Run it locally against a kind cluster (the lab runtime is published as an OCI Helm chart):
 
 ```bash
-tpm lab run examples/spring-boot-health-checks \
+tpm lab preview examples/spring-boot-health-checks \
   --chart-uri oci://ghcr.io/coreeng/charts/training-platform-assessment
 ```
 
@@ -102,6 +107,7 @@ tpm lab run examples/spring-boot-health-checks \
 ## Development
 
 ```bash
+make check    # Run the full local PR quality gate
 make build    # Build the tpm binary
 make test     # Run tests
 make lint     # Run golangci-lint (falls back to go vet)

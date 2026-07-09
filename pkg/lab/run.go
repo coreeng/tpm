@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -248,7 +249,7 @@ func logStep(opts Options, format string, args ...any) {
 	if opts.LogWriter == nil {
 		return
 	}
-	fmt.Fprintf(opts.LogWriter, format+"\n", args...)
+	_, _ = fmt.Fprintf(opts.LogWriter, format+"\n", args...)
 }
 
 func displayCommandName(name string) string {
@@ -297,21 +298,28 @@ func labelNamespace(ctx context.Context, runner Runner, namespace string, labels
 }
 
 func writeTarGz(srcDir, dstPath string) error {
-	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0750); err != nil {
 		return err
 	}
-	file, err := os.Create(dstPath)
+	// #nosec G304 -- dstPath is the local archive path selected by the lab runner.
+	file, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	gz := gzip.NewWriter(file)
-	defer gz.Close()
 	tw := tar.NewWriter(gz)
-	defer tw.Close()
 
-	return filepath.WalkDir(srcDir, func(path string, entry fs.DirEntry, walkErr error) error {
+	root, err := os.OpenRoot(srcDir)
+	if err != nil {
+		_ = file.Close()
+		return err
+	}
+	defer func() {
+		_ = root.Close()
+	}()
+
+	walkErr := filepath.WalkDir(srcDir, func(path string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -326,9 +334,13 @@ func writeTarGz(srcDir, dstPath string) error {
 		if err != nil {
 			return err
 		}
+		archiveName, err := safeTarArchiveName(rel)
+		if err != nil {
+			return err
+		}
 		linkTarget := ""
 		if info.Mode()&os.ModeSymlink != 0 {
-			linkTarget, err = os.Readlink(path)
+			linkTarget, err = root.Readlink(rel)
 			if err != nil {
 				return err
 			}
@@ -337,14 +349,14 @@ func writeTarGz(srcDir, dstPath string) error {
 		if err != nil {
 			return err
 		}
-		header.Name = filepath.ToSlash(rel)
+		header.Name = archiveName
 		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}
 		if entry.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return nil
 		}
-		input, err := os.Open(path)
+		input, err := root.Open(rel)
 		if err != nil {
 			return err
 		}
@@ -355,4 +367,31 @@ func writeTarGz(srcDir, dstPath string) error {
 		}
 		return closeErr
 	})
+	closeErr := tw.Close()
+	if closeErr == nil {
+		closeErr = gz.Close()
+	}
+	if closeErr == nil {
+		closeErr = file.Close()
+	} else {
+		_ = file.Close()
+	}
+	if walkErr != nil {
+		return walkErr
+	}
+	return closeErr
+}
+
+func safeTarArchiveName(rel string) (string, error) {
+	if rel == "" || rel == "." {
+		return "", fmt.Errorf("archive path %q is not valid", rel)
+	}
+	if os.PathSeparator != '\\' && strings.Contains(rel, `\`) {
+		return "", fmt.Errorf("archive path %q contains backslash separators", rel)
+	}
+	name := path.Clean(filepath.ToSlash(rel))
+	if name == "." || name == ".." || strings.HasPrefix(name, "../") || path.IsAbs(name) {
+		return "", fmt.Errorf("archive path %q escapes source directory", rel)
+	}
+	return name, nil
 }

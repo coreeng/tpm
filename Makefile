@@ -1,7 +1,11 @@
-.PHONY: build test lint install clean help
+.PHONY: build test lint security-lint vulncheck verify-tidy preview-ui-build check install clean deps help
 
 # Binary name
 BINARY_NAME=tpm
+EXAMPLE_VALIDATOR_DIR=examples/spring-boot-health-checks/validator
+GOVULNCHECK_VERSION=v1.5.0
+GOVULNCHECK=go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+PREVIEW_UI_DIR=web/preview
 
 # Build the binary
 build:
@@ -23,6 +27,36 @@ lint:
 		go vet ./...; \
 	fi
 
+# Run security lint through golangci-lint/gosec.
+security-lint:
+	@echo "Running security linter..."
+	@if ! command -v golangci-lint > /dev/null; then \
+		echo "golangci-lint is required for security-lint" >&2; \
+		exit 1; \
+	fi
+	golangci-lint run --enable-only=gosec --max-same-issues=0 ./...
+
+# Run Go vulnerability checks for every Go module in this repo.
+vulncheck:
+	@echo "Running vulnerability checks..."
+	$(GOVULNCHECK) ./...
+	cd $(EXAMPLE_VALIDATOR_DIR) && $(GOVULNCHECK) ./...
+
+# Verify all Go module files are tidy.
+verify-tidy:
+	@echo "Verifying go.mod files are tidy..."
+	go mod tidy -diff
+	cd $(EXAMPLE_VALIDATOR_DIR) && go mod tidy -diff
+
+# Build the React/Tailwind preview UI embedded by the Go binary.
+preview-ui-build:
+	@echo "Building preview UI..."
+	cd $(PREVIEW_UI_DIR) && yarn install --immutable
+	cd $(PREVIEW_UI_DIR) && yarn build
+
+# Run the full local quality gate before opening or updating a PR.
+check: verify-tidy preview-ui-build lint security-lint test vulncheck build
+
 # Install binary to GOPATH
 install:
 	@echo "Installing $(BINARY_NAME) to GOPATH/bin..."
@@ -39,14 +73,21 @@ deps:
 	@echo "Downloading dependencies..."
 	go mod download
 	go mod tidy
+	cd $(EXAMPLE_VALIDATOR_DIR) && go mod download && go mod tidy
+	cd $(PREVIEW_UI_DIR) && yarn install
 
 # Display help
 help:
 	@echo "Available targets:"
-	@echo "  build   - Build the $(BINARY_NAME) binary"
-	@echo "  test    - Run tests"
-	@echo "  lint    - Run linter"
-	@echo "  install - Install binary to GOPATH/bin"
-	@echo "  clean   - Remove build artifacts"
-	@echo "  deps    - Download and tidy dependencies"
-	@echo "  help    - Display this help message"
+	@echo "  build         - Build the $(BINARY_NAME) binary"
+	@echo "  test          - Run tests"
+	@echo "  lint          - Run linter"
+	@echo "  security-lint - Run gosec through golangci-lint"
+	@echo "  vulncheck     - Run govulncheck for repo Go modules"
+	@echo "  verify-tidy   - Verify go.mod and go.sum are tidy"
+	@echo "  preview-ui-build - Build the embedded React/Tailwind preview UI"
+	@echo "  check         - Run the full local PR quality gate"
+	@echo "  install       - Install binary to GOPATH/bin"
+	@echo "  clean         - Remove build artifacts"
+	@echo "  deps          - Download and tidy dependencies"
+	@echo "  help          - Display this help message"

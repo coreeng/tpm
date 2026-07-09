@@ -2,7 +2,7 @@ name: Lab E2E
 
 # Exercises the spring-boot-health-checks example lab end-to-end against a kind
 # cluster using the published OCI lab-runtime chart:
-#   tpm lab run -> assert goals RED -> negative control (starter stays RED)
+#   tpm lab preview -> assert goals RED -> negative control (starter stays RED)
 #   -> deploy solution -> poll until GREEN -> cleanup.
 # This gives the lab teeth: a rubber-stamping validator, a broken probe path, or a
 # non-bootable image all fail the job.
@@ -12,12 +12,24 @@ on:
     branches: [main]
     paths:
       - 'examples/spring-boot-health-checks/**'
+      - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
+      - 'cmd/lab*.go'
+      - 'cmd/preview*.go'
+      - 'internal/previewui/**'
+      - 'pkg/lab/**'
+      - 'web/preview/**'
   push:
     branches: [main]
     paths:
       - 'examples/spring-boot-health-checks/**'
+      - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
+      - 'cmd/lab*.go'
+      - 'cmd/preview*.go'
+      - 'internal/previewui/**'
+      - 'pkg/lab/**'
+      - 'web/preview/**'
   workflow_dispatch:
     inputs:
       chart_version:
@@ -74,19 +86,36 @@ jobs:
           kubectl cluster-info
           tpm --version
 
-      - name: Start lab (tpm lab run)
+      - name: Preview lab (starts runtime)
         run: |
           set -euo pipefail
-          tpm lab run "$LAB_PATH" \
+          rm -f run.out run-info.json
+          tpm lab preview "$LAB_PATH" \
             --chart-uri "$CHART_URI" \
-            --chart-version "$CHART_VERSION" | tee run.out
+            --chart-version "$CHART_VERSION" \
+            --no-open-browser \
+            --run-info-json run-info.json > run.out 2>&1 &
+          PREVIEW_PID="$!"
+          echo "PREVIEW_PID=$PREVIEW_PID" >> "$GITHUB_ENV"
 
-          RUN_ID="$(grep -oE 'run id [0-9a-fA-F-]+' run.out | awk '{print $3}')"
-          SYSTEM_NS="$(grep -oE '^System namespace: .+' run.out | awk '{print $3}')"
-          WORKSPACE_NS="$(grep -oE '^Workspace namespace: .+' run.out | awk '{print $3}')"
-          # Fall back to the documented naming if parsing ever changes.
-          : "${SYSTEM_NS:=lab-${RUN_ID}-system}"
-          : "${WORKSPACE_NS:=lab-${RUN_ID}-workspace}"
+          for _ in {1..240}; do
+            if grep -q '^Lab preview:' run.out; then
+              break
+            fi
+            if ! kill -0 "$PREVIEW_PID" 2>/dev/null; then
+              cat run.out
+              wait "$PREVIEW_PID" || true
+              exit 1
+            fi
+            sleep 1
+          done
+          grep -q '^Lab preview:' run.out
+          test -s run-info.json
+          cat run.out
+
+          RUN_ID="$(jq -r '.runId' run-info.json)"
+          SYSTEM_NS="$(jq -r '.systemNamespace' run-info.json)"
+          WORKSPACE_NS="$(jq -r '.workspaceNamespace' run-info.json)"
           test -n "$RUN_ID"
           echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
           echo "SYSTEM_NS=$SYSTEM_NS" >> "$GITHUB_ENV"
@@ -138,6 +167,8 @@ jobs:
       - name: Diagnostics on failure
         if: failure()
         run: |
+          echo "=== lab preview output ==="
+          cat run.out || true
           echo "=== workspace resources ==="
           kubectl get all -n "$WORKSPACE_NS" || true
           echo "=== deployment describe ==="
@@ -147,4 +178,11 @@ jobs:
 
       - name: Cleanup lab
         if: always()
-        run: tpm lab cleanup --id "$RUN_ID" || true
+        run: |
+          if [ -n "${RUN_ID:-}" ]; then
+            tpm lab cleanup --id "$RUN_ID" || true
+          fi
+          if [ -n "${PREVIEW_PID:-}" ]; then
+            kill "$PREVIEW_PID" 2>/dev/null || true
+            wait "$PREVIEW_PID" 2>/dev/null || true
+          fi

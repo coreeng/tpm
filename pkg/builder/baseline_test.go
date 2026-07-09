@@ -18,14 +18,14 @@ func TestBuildModule_Baseline(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Build the module - use path relative to repo root
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	_, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "module.yaml")
+	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	// #nosec G304 -- test reads the output path it just built.
 	actualBytes, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
@@ -36,7 +36,8 @@ func TestBuildModule_Baseline(t *testing.T) {
 
 	// If update flag is set, write the baseline and exit
 	if *updateBaseline {
-		if err := os.WriteFile(baselinePath, actualBytes, 0644); err != nil {
+		// #nosec G703 -- baselinePath is a controlled repository test fixture path.
+		if err := os.WriteFile(baselinePath, actualBytes, 0600); err != nil {
 			t.Fatalf("Failed to write baseline file: %v", err)
 		}
 		t.Logf("✓ Baseline file updated: %s", baselinePath)
@@ -45,6 +46,7 @@ func TestBuildModule_Baseline(t *testing.T) {
 	}
 
 	// Read the baseline file
+	// #nosec G304 -- test reads a controlled repository baseline fixture.
 	baselineBytes, err := os.ReadFile(baselinePath)
 	if err != nil {
 		t.Fatalf("Failed to read baseline file: %v\n"+
@@ -67,9 +69,41 @@ func TestBuildModule_Baseline(t *testing.T) {
 
 		// Also write the actual output for debugging
 		debugPath := filepath.Join("simple-module", "actual-output.yaml")
-		if err := os.WriteFile(debugPath, actualBytes, 0644); err == nil {
+		// #nosec G703 -- debugPath is a controlled test debug-output path.
+		if err := os.WriteFile(debugPath, actualBytes, 0600); err == nil {
 			t.Logf("Actual output written to: %s", debugPath)
 		}
+	}
+}
+
+func TestBuildModule_PreservesCompleteContractFields(t *testing.T) {
+	outDir := t.TempDir()
+
+	_, err := Build("testdata/contract-module", outDir, "", "")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+
+	// #nosec G304 -- test reads the output path it just built.
+	actualBytes, err := os.ReadFile(filepath.Join(outDir, "contract-module", "module.yaml"))
+	if err != nil {
+		t.Fatalf("Failed to read output file: %v", err)
+	}
+	// #nosec G304 -- test reads a controlled repository baseline fixture.
+	baselineBytes, err := os.ReadFile(filepath.Join("testdata", "contract-module", "baseline-module.yaml"))
+	if err != nil {
+		t.Fatalf("Failed to read baseline file: %v", err)
+	}
+
+	var actual, baseline map[string]interface{}
+	if err := yaml.Unmarshal(actualBytes, &actual); err != nil {
+		t.Fatalf("Failed to unmarshal actual YAML: %v", err)
+	}
+	if err := yaml.Unmarshal(baselineBytes, &baseline); err != nil {
+		t.Fatalf("Failed to unmarshal baseline YAML: %v", err)
+	}
+	if diff := cmp.Diff(baseline, actual); diff != "" {
+		t.Fatalf("contract build output differs from baseline (-baseline +actual):\n%s", diff)
 	}
 }
 
@@ -77,32 +111,32 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	// Create a temporary output directory
 	outDir := t.TempDir()
 
-	// Build the module - use path relative to repo root
-	err := Build("pkg/builder/testdata/simple-module", outDir, "", "")
+	_, err := Build("testdata/simple-module", outDir, "", "")
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Read the built module
-	outFile := filepath.Join(outDir, "module.yaml")
+	outFile := filepath.Join(outDir, "simple-module", "module.yaml")
+	// #nosec G304 -- test reads the output path it just built.
 	data, err := os.ReadFile(outFile)
 	if err != nil {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
 
 	// Parse the module
-	var mod module.Module
+	var mod module.BuiltModule
 	if err := yaml.Unmarshal(data, &mod); err != nil {
 		t.Fatalf("Failed to unmarshal output YAML: %v", err)
 	}
 
 	// Verify basic structure
-	if mod.Code != "test-module-123" {
-		t.Errorf("Expected module code 'test-module-123', got '%s'", mod.Code)
+	if mod.Code != "kubernetes-101" {
+		t.Errorf("Expected module code 'kubernetes-101', got '%s'", mod.Code)
 	}
 
-	if mod.Title != "Test Module" {
-		t.Errorf("Expected module title 'Test Module', got '%s'", mod.Title)
+	if mod.Title != "Kubernetes 101" {
+		t.Errorf("Expected module title 'Kubernetes 101', got '%s'", mod.Title)
 	}
 
 	// Verify description was merged from markdown
@@ -115,13 +149,13 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 
 	// Verify chapters
-	if len(mod.Chapters) != 1 {
-		t.Fatalf("Expected 1 chapter, got %d", len(mod.Chapters))
+	if len(mod.Chapters) != 3 {
+		t.Fatalf("Expected 3 chapters, got %d", len(mod.Chapters))
 	}
 
 	chapter := mod.Chapters[0]
-	if chapter.Code != "test-chapter-456" {
-		t.Errorf("Expected chapter code 'test-chapter-456', got '%s'", chapter.Code)
+	if chapter.Code != "cluster-fundamentals" {
+		t.Errorf("Expected chapter code 'cluster-fundamentals', got '%s'", chapter.Code)
 	}
 
 	// Verify chapter description was merged from markdown
@@ -129,14 +163,17 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 		t.Error("Expected chapter description to be merged from description.md")
 	}
 
-	// Verify sections
-	if len(chapter.Sections) != 1 {
-		t.Fatalf("Expected 1 section, got %d", len(chapter.Sections))
+	// Verify chapters have intentionally varied section counts.
+	expectedSectionCounts := []int{2, 3, 1}
+	for i, want := range expectedSectionCounts {
+		if got := len(mod.Chapters[i].Sections); got != want {
+			t.Fatalf("Expected chapter %d to have %d section(s), got %d", i+1, want, got)
+		}
 	}
 
 	section := chapter.Sections[0]
-	if section.Code != "test-section-789" {
-		t.Errorf("Expected section code 'test-section-789', got '%s'", section.Code)
+	if section.Code != "what-is-kubernetes" {
+		t.Errorf("Expected section code 'what-is-kubernetes', got '%s'", section.Code)
 	}
 
 	// Verify section description was merged from markdown
@@ -150,5 +187,16 @@ func TestBuildModule_BaselineStructure(t *testing.T) {
 	}
 	if section.Index != 1 {
 		t.Errorf("Expected section index 1, got %d", section.Index)
+	}
+
+	quiz := mod.Chapters[2].MultipleChoiceAssessments[0]
+	if len(quiz.Questions) != 3 {
+		t.Fatalf("Expected operations quiz to have 3 questions, got %d", len(quiz.Questions))
+	}
+	if quiz.Questions[0].Type != "SINGLE" {
+		t.Errorf("Expected first quiz question to be SINGLE, got %s", quiz.Questions[0].Type)
+	}
+	if quiz.Questions[2].Type != "MULTIPLE" {
+		t.Errorf("Expected third quiz question to be MULTIPLE, got %s", quiz.Questions[2].Type)
 	}
 }

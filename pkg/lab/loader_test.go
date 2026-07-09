@@ -57,7 +57,7 @@ challenges:
 func TestDetectModuleBackedLabFromRuntimePath(t *testing.T) {
 	repo := t.TempDir()
 	metadataRoot := filepath.Join(repo, "path-to-production", "module", "01-chapter", "assessments", "01-lab")
-	writeFile(t, filepath.Join(metadataRoot, "assessment.yaml"), `title: Module Backed Lab
+	writeFile(t, filepath.Join(metadataRoot, "assessment.yml"), `title: Module Backed Lab
 code: module-backed-lab
 timeLimit: 45m
 `)
@@ -93,8 +93,8 @@ goals:
 	if loaded.RuntimePath != runtimeRoot {
 		t.Errorf("RuntimePath = %q, want %q", loaded.RuntimePath, runtimeRoot)
 	}
-	if loaded.MetadataPath != filepath.Join(metadataRoot, "assessment.yaml") {
-		t.Errorf("MetadataPath = %q, want assessment.yaml path", loaded.MetadataPath)
+	if loaded.MetadataPath != filepath.Join(metadataRoot, "assessment.yml") {
+		t.Errorf("MetadataPath = %q, want assessment.yml path", loaded.MetadataPath)
 	}
 	if loaded.Title != "Module Backed Lab" {
 		t.Errorf("Title = %q, want Module Backed Lab", loaded.Title)
@@ -131,12 +131,12 @@ code: standalone-lab
 func makeRuntimeDirs(t *testing.T, root string, includeValidator bool) {
 	t.Helper()
 	for _, name := range []string{"starter-content", "solution"} {
-		if err := os.MkdirAll(filepath.Join(root, name), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(root, name), 0700); err != nil {
 			t.Fatalf("create %s: %v", name, err)
 		}
 	}
 	if includeValidator {
-		if err := os.MkdirAll(filepath.Join(root, "validator"), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(root, "validator"), 0700); err != nil {
 			t.Fatalf("create validator: %v", err)
 		}
 	}
@@ -144,10 +144,10 @@ func makeRuntimeDirs(t *testing.T, root string, includeValidator bool) {
 
 func writeFile(t *testing.T, path, contents string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		t.Fatalf("create parent for %s: %v", path, err)
 	}
-	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
 }

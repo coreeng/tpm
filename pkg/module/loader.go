@@ -14,7 +14,10 @@ import (
 func LoadModule(rootDir, moduleName string) (*Module, error) {
 	modulePath := GetModulePath(rootDir, moduleName)
 	moduleFilePath := GetModuleFilePath(rootDir, moduleName)
+	return loadModuleFromSourcePath(modulePath, moduleFilePath)
+}
 
+func loadModuleFromSourcePath(modulePath, moduleFilePath string) (*Module, error) {
 	// Check if module file exists
 	if !pathutil.FileExists(moduleFilePath) {
 		return nil, fmt.Errorf("module file not found at %s", moduleFilePath)
@@ -226,6 +229,7 @@ func loadChallenges(assessmentPath string) ([]Challenge, error) {
 
 // loadYAML reads a YAML file and unmarshals it into the provided struct
 func loadYAML(path string, v interface{}) error {
+	// #nosec G304 -- module loading intentionally reads local YAML files from the selected module tree.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err

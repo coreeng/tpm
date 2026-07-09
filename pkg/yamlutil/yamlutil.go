@@ -11,6 +11,7 @@ import (
 // Preserves formatting and comments using yaml.v3's Node API
 func AddFieldToYAML(filePath, fieldName, fieldValue string) error {
 	// Read the file
+	// #nosec G304 -- YAML helpers intentionally edit the local file path supplied by the caller.
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
@@ -33,7 +34,7 @@ func AddFieldToYAML(filePath, fieldName, fieldValue string) error {
 		return fmt.Errorf("failed to marshal YAML: %w", err)
 	}
 
-	if err := os.WriteFile(filePath, output, 0644); err != nil {
+	if err := os.WriteFile(filePath, output, 0600); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -44,6 +45,7 @@ func AddFieldToYAML(filePath, fieldName, fieldValue string) error {
 // Preserves formatting and comments using yaml.v3's Node API
 func RemoveFieldFromYAML(filePath, fieldName string) error {
 	// Read the file
+	// #nosec G304 -- YAML helpers intentionally edit the local file path supplied by the caller.
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
@@ -66,7 +68,7 @@ func RemoveFieldFromYAML(filePath, fieldName string) error {
 		return fmt.Errorf("failed to marshal YAML: %w", err)
 	}
 
-	if err := os.WriteFile(filePath, output, 0644); err != nil {
+	if err := os.WriteFile(filePath, output, 0600); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 

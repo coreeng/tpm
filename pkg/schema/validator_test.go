@@ -113,7 +113,7 @@ func TestValidateStructWithErrors(t *testing.T) {
 	invalidModule := map[string]interface{}{
 		"code":  "550e8400-e29b-41d4-a716-446655440000",
 		"title": "Test Module",
-		// Missing required fields: shortDescription, level, bannerImage, bannerVideo, tags
+		// Missing required fields: shortDescription, level, bannerImage, tags
 	}
 
 	errors, err := validator.ValidateStruct(invalidModule, "module.schema.json")

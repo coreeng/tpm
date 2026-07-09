@@ -129,6 +129,7 @@ func readDescriptionMd(dir string) (string, error) {
 	}
 
 	// Read file content
+	// #nosec G304 -- module builds intentionally read description.md from the selected local module tree.
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
@@ -148,6 +149,7 @@ func readSuccessMessageMd(dir string) (string, error) {
 	}
 
 	// Read file content
+	// #nosec G304 -- module builds intentionally read successMessage.md from the selected local module tree.
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

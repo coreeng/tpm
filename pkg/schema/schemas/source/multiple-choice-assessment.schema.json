@@ -45,11 +45,6 @@
         "$ref": "question.schema.json"
       },
       "description": "Array of quiz questions. Must have at least one question."
-    },
-    "video": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional URL to a video resource providing quiz guidance or context."
     }
   },
   "additionalProperties": false

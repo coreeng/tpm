@@ -1,0 +1,27 @@
+code: contract-chapter
+title: Contract Chapter
+isDraft: true
+multipleChoiceAssessments:
+  - code: contract-quiz
+    title: Contract Quiz
+    description: Confirm the quiz contract.
+    passingScore: 80
+    questions:
+      - code: single-choice
+        question: Which object owns rollout history?
+        type: SINGLE
+        options:
+          - text: Deployment
+            correct: true
+          - text: Service
+            correct: false
+      - code: multiple-choice
+        question: Which signals help diagnose workload health?
+        type: MULTIPLE
+        options:
+          - text: Pod status
+            correct: true
+          - text: Events
+            correct: true
+          - text: Billing labels
+            correct: false

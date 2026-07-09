@@ -1,0 +1,4 @@
+code: pods-deployments-and-services
+title: Pods, Deployments, and Services
+shortDescription: Connect the smallest runtime unit to rollout and networking primitives.
+estimatedDuration: 20m

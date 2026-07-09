@@ -1,0 +1,4 @@
+code: service-discovery
+title: Service discovery
+shortDescription: Learn how Services give changing Pods a stable network entry point.
+estimatedDuration: 16m
