@@ -178,6 +178,7 @@ tpm module add quiz modules/kubernetes-101 \
   --at 1 \
   --set code=kubernetes-operations-check \
   --set title="Kubernetes operations check" \
+  --set description="Check the core concepts from this module" \
   --set passingScore=70
 ```
 
@@ -355,6 +356,7 @@ tpm lab cleanup --id <run-id>
 | `--addr <host:port>` | Address for the local preview server. Defaults to `127.0.0.1:0`. |
 | `--watch` | Reload lab metadata and markdown when source files change. |
 | `--no-open-browser` | Serve the preview without opening the default browser. |
+| `--run-info-json <file>` | Write the run ID, namespaces, registry details, and preview URL to a local JSON file. |
 | `--allow-non-kind` | Allow running against a kubectl context that is not a kind cluster. |
 | `--assume-image-accessible` | Assume a non-kind cluster can pull the local validator image tag. |
 

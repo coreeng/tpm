@@ -12,12 +12,24 @@ on:
     branches: [main]
     paths:
       - 'examples/spring-boot-health-checks/**'
+      - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
+      - 'cmd/lab*.go'
+      - 'cmd/preview*.go'
+      - 'internal/previewui/**'
+      - 'pkg/lab/**'
+      - 'web/preview/**'
   push:
     branches: [main]
     paths:
       - 'examples/spring-boot-health-checks/**'
+      - '.github/scripts/lab-e2e-assert.sh'
       - '.github/workflows/lab-e2e.yaml'
+      - 'cmd/lab*.go'
+      - 'cmd/preview*.go'
+      - 'internal/previewui/**'
+      - 'pkg/lab/**'
+      - 'web/preview/**'
   workflow_dispatch:
     inputs:
       chart_version:
