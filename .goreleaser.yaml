@@ -69,6 +69,7 @@ brews:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     # Formulae live at the repo root in this tap, not under Formula/.
     directory: .
+    commit_msg_template: "chore(tpm): update Homebrew formula to {{ .Tag }}"
     homepage: "https://github.com/coreeng/tpm"
     description: "Training Platform Module (tpm) CLI — author and manage training modules and labs"
     commit_author:
